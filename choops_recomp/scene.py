@@ -110,13 +110,13 @@ def _materials(head):
     return result
 
 
-def preview(blocks,triangle_limit=400000):
+def preview(blocks,triangle_limit=400000,source_geometry=False):
     if not 1<=len(blocks)<=2:raise ValueError('SCNE requires one or two components')
     head=Binary(blocks[0]);gpu=head if len(blocks)==1 else Binary(blocks[1]);head.take(0,0x54)
     count=head.u32(0x44)
     if count>4096:raise ValueError('Mesh table exceeds limit')
     table=head.relative(0x48) if count else 0;head.take(table,count*176)
-    warnings=[];meshes=[];total=0;transforms=instances(head)
+    warnings=[];meshes=[];sources=[];total=0;transforms=instances(head)
     try:materials=_materials(head)
     except ValueError as exc:materials={};warnings.append('Materials: '+str(exc))
     for i in range(count):
@@ -128,14 +128,14 @@ def preview(blocks,triangle_limit=400000):
             if head.u32(part+0x84)!=1 or not 1<=runs<=10000:raise ValueError('Unsupported vertex descriptor/draw count')
             desc=head.relative(part+0x88);vertices=head.u32(desc+8);streams_count=head.u32(desc+12)>>16
             if not 1<=vertices<=250000 or not 1<=streams_count<=16:raise ValueError('Invalid Xbox vertex buffer dimensions')
-            streams=[]
+            streams=[];stream_starts=[]
             for j in range(streams_count):
                 # Embedded Xbox cloth carries CPU stream descriptors with two
                 # additional words. GPU-backed SCNE uses the 16-byte form.
                 entry=desc+24+j*(24 if len(blocks)==1 else 16);stride,length=head.u32(entry+4),head.u32(entry+8)
                 if not 1<=stride<=256 or vertices*stride!=length:raise ValueError('Vertex buffer length differs from stride/count')
                 start=head.relative(entry+12) if len(blocks)==1 else head.u32(entry+12)-1
-                streams.append((stride,gpu.take(start,length)))
+                streams.append((stride,gpu.take(start,length)));stream_starts.append(start)
             n=head.u32(part+0x98);decl=head.relative(part+0x9c)
             if not 1<=n<=32:raise ValueError('Unsupported declaration count')
             head.take(decl,n*64);attributes=[]
@@ -182,7 +182,7 @@ def preview(blocks,triangle_limit=400000):
                     if all(head.u32(draw+j*stride)==6 and head.u32(draw+j*stride+4)+head.u32(draw+j*stride+8)<=indices_count for j in range(runs)):candidates.append(stride)
                 except ValueError:pass
             if not candidates or len(candidates)>1 and runs>1:raise ValueError('Unsupported/ambiguous draw layout')
-            stride=candidates[0];triangles=[];batches=[]
+            stride=candidates[0];triangles=[];triangle_indices=[];batches=[]
             for j in range(runs):
                 run=draw+j*stride;first,size=head.u32(run+4),head.u32(run+8);strip=[];before=len(triangles)
                 for index in indices[first:first+size]:
@@ -192,13 +192,18 @@ def preview(blocks,triangle_limit=400000):
                     if len(strip)>=3:
                         a,b,c=strip[-3:]
                         if len(strip)%2==0:a,b=b,a
-                        if len({a,b,c})==3:triangles.extend((points[a],points[b],points[c]))
+                        if len({a,b,c})==3:
+                            triangles.extend((points[a],points[b],points[c]))
+                            if source_geometry:triangle_indices.extend((a,b,c))
                 mat=head.u32(run+32) if stride==48 else head.u16(run+32)
                 batches.append(dict(first=before,count=len(triangles)-before,material=mat,**materials.get(mat,dict(texture_index=None))))
                 if total+len(triangles)>triangle_limit*3:raise ValueError('Preview triangle budget exceeded')
             if triangles:
+                if source_geometry:sources.append(dict(name=name,points=points,indices=triangle_indices,position=position,stream_start=stream_starts[position['stream']],stride=streams[position['stream']][0],component=0 if len(blocks)==1 else 1))
                 for matrix in transforms.get(head.u32(part+4),[None]):
                     if total+len(triangles)>triangle_limit*3:raise ValueError('Instanced preview triangle budget exceeded')
                     total+=len(triangles);meshes.append(dict(name=name,vertices=transform(triangles,matrix),batches=batches,hidden_by_default='roof' in name.lower() or 'light_fx' in name.lower()))
         except (ValueError,struct.error) as exc:warnings.append(name+': '+str(exc))
-    return dict(meshes=meshes,warnings=warnings,materials=materials,declared_parts=count)
+    result=dict(meshes=meshes,warnings=warnings,materials=materials,declared_parts=count)
+    if source_geometry:result['source_meshes']=sources
+    return result

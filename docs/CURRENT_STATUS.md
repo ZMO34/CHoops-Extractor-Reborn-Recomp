@@ -48,7 +48,7 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 73 tests.
+not yet migrated the installed game. The current editor suite passes 77 tests.
 
 The complete paired corpus (40 pairs / 2,361 records) now passes private
 source-removal checks in both reader implementations. Installed migration and
@@ -62,3 +62,11 @@ a concurrent edit prevents rollback. Process interruption is not certified as
 an atomic multi-track commit. Licensed and band/fight categories remain separate.
 Fresh direct imports materialize paired records and omit their obsolete combined
 payloads; existing-install migration retains backups by default.
+
+Embedded Xbox cloth supports source-bound OBJ position import/export in the GUI
+and CLI. All 33 identified cloth resources pass private byte-identical round trips
+and single-coordinate preservation checks. Files use source model coordinates;
+vertex order and exact triangle topology must remain intact. The writer changes
+only float3 positions, preserving UVs, weights, rigging, materials and unknown
+bytes. It edits shared cloth, not independent per-uniform meshes. Additional
+vertex layouts, simulated/rest-pose behavior and gameplay remain unverified.

@@ -116,6 +116,7 @@ class Studio(QMainWindow):
         model_page=self.pages['SCNE'];self.view=QLabel('3D preview is disabled in offscreen UI checks') if offscreen else __import__('choops_recomp.ui.scene_view',fromlist=['SceneView']).SceneView()
         model_page['layout'].addWidget(self.view,1);model_page['details']=QPlainTextEdit();model_page['details'].setReadOnly(True);model_page['details'].setMaximumHeight(130);model_page['layout'].addWidget(model_page['details'])
         row=QHBoxLayout();fit=QPushButton('Fit camera');fit.clicked.connect(lambda:self.view.fit() if hasattr(self.view,'fit') else None);row.addWidget(fit)
+        for text,slot in [('Export cloth OBJ…',self.export_cloth_obj),('Import cloth positions…',self.import_cloth_obj)]:button=QPushButton(text);button.clicked.connect(slot);row.addWidget(button)
         self.cutaway=QCheckBox('Cutaway');self.cutaway.setChecked(True);self.cutaway.toggled.connect(self.toggle_cutaway);row.addWidget(self.cutaway)
         self.scene_textures=QComboBox();row.addWidget(self.scene_textures,1);export=QPushButton('Export DDS');export.clicked.connect(self.export_scene_dds);row.addWidget(export);replace=QPushButton('Replace DDS…');replace.clicked.connect(self.replace_scene_dds);row.addWidget(replace);model_page['layout'].addLayout(row)
         row=QHBoxLayout();self.uniform_picker=QComboBox();self.uniform_picker.setEditable(True);row.addWidget(self.uniform_picker,1);self.uniform_shape=QComboBox();self.uniform_shape.addItems(['U','V','V triangle','Triangle','Wishbone']);row.addWidget(self.uniform_shape);self.uniform_build=QComboBox();self.uniform_build.addItems(['reg','thin','fat']);row.addWidget(self.uniform_build);self.shorts_build=QComboBox();self.shorts_build.addItems(['reg','thin','fat']);row.addWidget(self.shorts_build);preview=QPushButton('Preview uniform');preview.clicked.connect(self.preview_uniform);row.addWidget(preview);model_page['layout'].addLayout(row)
@@ -339,6 +340,25 @@ class Studio(QMainWindow):
     def scene_texture(self):
         if not self.scene_data:return None
         index=self.scene_textures.currentData();return next((t for t in self.scene_data['textures'] if t['index']==index),None)
+    def export_cloth_obj(self):
+        resource=self.selected('SCNE',self.pages['SCNE']['view'].currentIndex())
+        if resource is None:return
+        path,_=QFileDialog.getSaveFileName(self,'Export selected Xbox cloth in model space','','OBJ (*.obj)')
+        if path:
+            from ..geometry import export_obj
+            self.run_job(lambda progress:export_obj(resource,path),lambda result:self.statusBar().showMessage('Exported cloth OBJ and source-bound companion. Preserve vertex order and topology.'))
+    def import_cloth_obj(self):
+        resource=self.selected('SCNE',self.pages['SCNE']['view'].currentIndex())
+        if resource is None:return
+        path,_=QFileDialog.getOpenFileName(self,'Import source-bound Xbox cloth positions','','OBJ (*.obj)')
+        if not path or self.workspace is not resource.workspace:return
+        answer=QMessageBox.question(self,'Save shared cloth positions',f'Save model-space positions to {resource.label}? Every uniform using this cloth resource shares these edits.',QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Cancel)
+        if answer!=QMessageBox.StandardButton.Save:return
+        from ..geometry import import_obj
+        def finished(count):
+            self.statusBar().showMessage(f'Saved {count} cloth positions directly to the component. Restart the recomp to apply.')
+            if self.workspace is resource.workspace:self.select_resource('SCNE',self.pages['SCNE']['view'].currentIndex())
+        self.run_job(lambda progress:import_obj(resource,path),finished)
     def export_scene_dds(self):
         t=self.scene_texture()
         if not t:return

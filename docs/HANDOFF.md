@@ -55,7 +55,7 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 73 tests.
+not yet migrated the installed game. The current editor suite passes 77 tests.
 
 The complete paired corpus (40 pairs / 2,361 records) now passes private
 source-removal checks in both reader implementations. Installed migration and
@@ -69,6 +69,14 @@ a concurrent edit prevents rollback. Process interruption is not certified as
 an atomic multi-track commit. Licensed and band/fight categories remain separate.
 Fresh direct imports materialize paired records and omit their obsolete combined
 payloads; existing-install migration retains backups by default.
+
+Embedded Xbox cloth supports source-bound OBJ position import/export in the GUI
+and CLI. All 33 identified cloth resources pass private byte-identical round trips
+and single-coordinate preservation checks. Files use source model coordinates;
+vertex order and exact triangle topology must remain intact. The writer changes
+only float3 positions, preserving UVs, weights, rigging, materials and unknown
+bytes. It edits shared cloth, not independent per-uniform meshes. Additional
+vertex layouts, simulated/rest-pose behavior and gameplay remain unverified.
 
 
 ---
@@ -88,7 +96,7 @@ writer, preservation test or integration requirement.
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
 | Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
 | Uniform/shoe previews | Combined jersey/shorts and authored shoe upper/sole DDS implemented | Numbers/name glyphs, preview selection polish, runtime material effects |
-| Uniform OBJ workflow | Pending | Xbox source-bound geometry/rest-position import and export |
+| Uniform OBJ workflow | Source-bound float3 cloth OBJ import/export in GUI/CLI; all 33 identified resources pass private preservation checks | Additional vertex layouts, rest/skin deformation parity and gameplay acceptance |
 | Court surface controls | Pending | Xbox geometry bindings and preservation tests |
 | Roster names, jersey, height, position | Implemented | Search/filter and related side panels |
 | Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare | School filters and richer selection controls |
@@ -121,7 +129,7 @@ evidence before adoption; incomplete research is not silently marked obsolete.
 
 # Test report
 
-- Core and Qt suite: **73 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **77 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -190,3 +198,8 @@ expanded texture layouts and full feature parity are not certified by these test
   injected second-track disk failure. No packed assets or registry are written.
 - Fresh paired import omits obsolete metadata/data payloads after successful
   component publication; repeat preparation still reads both components.
+
+- Cloth OBJ: all **33 identified Xbox cloth resources** pass private byte-identical
+  round trips. A single X coordinate changes at most its four float bytes, with
+  all other source bytes preserved. Synthetic tests reject changed topology,
+  nonfinite coordinates and stale source companions before writing.

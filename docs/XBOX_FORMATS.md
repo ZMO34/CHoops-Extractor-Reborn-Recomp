@@ -76,3 +76,11 @@ Application stages each reviewed input, checks source/destination hashes, and
 rolls back preceding WAV/metadata writes on ordinary failures. It does not
 change XMA packets or rebuild a bank. Interrupted processes may leave a recovery
 manifest and backups; multi-track crash atomicity is not claimed.
+
+Embedded cloth OBJ evidence: Xbox CPU stream descriptors use 24-byte rows; the
+verified float3 position format is Xenos 57. Source export retains original
+vertex indices and triangulates validated strips. Position-only import checks
+source SHA256, per-mesh counts and exact live topology, patches only the three
+big-endian floats, then reparses. All 33 identified cloth resources pass private
+round-trip and single-coordinate checks. Exports use model-space positions;
+instance matrices and runtime cloth/skin deformation remain unchanged.

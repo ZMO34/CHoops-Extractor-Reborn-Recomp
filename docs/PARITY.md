@@ -13,7 +13,7 @@ writer, preservation test or integration requirement.
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
 | Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
 | Uniform/shoe previews | Combined jersey/shorts and authored shoe upper/sole DDS implemented | Numbers/name glyphs, preview selection polish, runtime material effects |
-| Uniform OBJ workflow | Pending | Xbox source-bound geometry/rest-position import and export |
+| Uniform OBJ workflow | Source-bound float3 cloth OBJ import/export in GUI/CLI; all 33 identified resources pass private preservation checks | Additional vertex layouts, rest/skin deformation parity and gameplay acceptance |
 | Court surface controls | Pending | Xbox geometry bindings and preservation tests |
 | Roster names, jersey, height, position | Implemented | Search/filter and related side panels |
 | Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare | School filters and richer selection controls |

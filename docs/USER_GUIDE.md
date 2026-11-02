@@ -69,3 +69,10 @@ count. Save rechecks the reviewed files and destinations, then applies them to
 each owning folder. A write failure restores preceding changes; if a concurrent
 edit prevents restoration, recovery files and their target manifest are retained
 at the location reported by the editor.
+
+Cloth OBJ: select the cloth SCNE resource in Models / Courts, then Export cloth
+OBJ. Keep the OBJ companion JSON beside it. Edit positions in source model space
+and retain vertex order/count and exact triangulated faces. Import cloth positions
+validates the source and topology, then saves positions directly to its component.
+UV, normal, rigging and topology edits are not imported. Shared cloth affects all
+uniforms using that resource; this is distinct from editing a uniform DDS.

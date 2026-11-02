@@ -22,3 +22,5 @@
 
 - Add selective batch WAV import with source review and write-failure rollback.
 - Omit obsolete paired payloads from fresh direct imports after component extraction.
+
+- Add source-bound Xbox cloth OBJ position editing and validate all 33 identified resources.

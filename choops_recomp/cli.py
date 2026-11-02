@@ -16,7 +16,7 @@ def main(argv=None):
         s=sub.add_parser(command);s.add_argument('folder',type=Path)
         if command=='import-audio-folder':s.add_argument('--resources',help='Comma-separated reviewed resource keys; omitted applies all changed tracks')
     s=sub.add_parser('inspect-resource');s.add_argument('resource');s.add_argument('--component',type=int,default=0);s.add_argument('--offset',type=lambda value:int(value,0),default=0);s.add_argument('--length',type=int,default=4096)
-    for command in ('export-wav','import-wav','export-dds','import-dds','import-artwork','scene-info'):
+    for command in ('export-wav','import-wav','export-dds','import-dds','import-artwork','export-cloth-obj','import-cloth-obj','scene-info'):
         s=sub.add_parser(command);s.add_argument('resource')
         if command!='scene-info':s.add_argument('file',type=Path)
     s=sub.add_parser('roster-export');s.add_argument('file',type=Path)
@@ -56,7 +56,11 @@ def main(argv=None):
         else:model.set_string(args.table,args.index,args.field,args.value)
         model.save(resource.component_path());print('Xbox roster saved');return 0
     resource=w.resource(args.resource)
-    if args.command=='inspect-resource':
+    if args.command in ('export-cloth-obj','import-cloth-obj'):
+        from . import geometry
+        if args.command=='export-cloth-obj':geometry.export_obj(resource,args.file);print('Source-bound Xbox cloth OBJ exported')
+        else:print(f'Saved {geometry.import_obj(resource,args.file)} cloth positions directly to the resource component')
+    elif args.command=='inspect-resource':
         from .inspection import page,hex_text
         print(hex_text(page(resource,args.component,args.offset,args.length),args.offset))
     elif args.command=='export-wav':print(json.dumps(audio.export_wav(resource,args.file),indent=2))

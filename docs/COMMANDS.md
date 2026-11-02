@@ -30,3 +30,8 @@ validates paired extraction on a private copy and removes only copied payloads.
 `review-audio-folder EXPORTED_FOLDER` prints changed tracks and source identities.
 `import-audio-folder EXPORTED_FOLDER --resources bank.iff/0,bank.iff/1` applies
 selected reviewed identities; omit `--resources` to apply all changed tracks.
+
+`export-cloth-obj RESOURCE_KEY cloth.obj` writes source-bound geometry and JSON.
+`import-cloth-obj RESOURCE_KEY cloth.obj` saves supported model-space positions.
+`tools/cloth_smoke.py --assets GAME/assets --output output/NEW_PRIVATE_FOLDER`
+checks every identified cloth resource on private copies without launching a game.

@@ -1,6 +1,6 @@
 # Test report
 
-- Core and Qt suite: **73 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **77 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -69,3 +69,8 @@ expanded texture layouts and full feature parity are not certified by these test
   injected second-track disk failure. No packed assets or registry are written.
 - Fresh paired import omits obsolete metadata/data payloads after successful
   component publication; repeat preparation still reads both components.
+
+- Cloth OBJ: all **33 identified Xbox cloth resources** pass private byte-identical
+  round trips. A single X coordinate changes at most its four float bytes, with
+  all other source bytes preserved. Synthetic tests reject changed topology,
+  nonfinite coordinates and stale source companions before writing.

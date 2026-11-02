@@ -9,7 +9,7 @@ from choops_recomp import uniforms
 def hashes(folder):return {str(p.relative_to(folder)):hashlib.sha256(p.read_bytes()).hexdigest() for p in folder.rglob('*') if p.is_file()}
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--assets',required=True);p.add_argument('--output',required=True);a=p.parse_args();original=Workspace(a.assets);destination=Path(a.output).resolve()
+    p=argparse.ArgumentParser();p.add_argument('--assets',required=True);p.add_argument('--output',required=True);p.add_argument('--full-editor',action='store_true');a=p.parse_args();original=Workspace(a.assets);destination=Path(a.output).resolve()
     if destination.exists() or destination.is_relative_to(original.root):raise ValueError('Choose a new private output outside the supplied installation')
     roster=original.of_type('ROST')[0];model=Roster(roster.blocks()[0]);rows=uniforms.rows(model);choice=None
     import struct
@@ -46,5 +46,16 @@ def main():
         assert private==replacement
     assert not any(p for name in result['folders'] for p in (destination/'assets'/name).rglob('*.stored'))
     report=dict(result,discovered_textures=len(discovered),source_templates_unchanged=True,reopened_banks=len(reopened.banks),separate_registry_required=False)
+    if a.full_editor:
+        from choops_recomp.workspace import sha
+        owner=uniforms.owner(reparsed,team)
+        if len(uniforms.owners(reparsed,owner))>1:uniforms.detach(reparsed,team);reparsed.save(reopened.of_type('ROST')[0].component_path())
+        current=next(r for r in uniforms.rows(reparsed) if r['owner']==uniforms.owner(reparsed,team) and r['variant']==0)
+        count=len(uniforms.rows(reparsed));clone=uniforms.clone_artwork(reopened,reparsed,reopened.of_type('ROST')[0],team,current['index'],901)
+        assert len(uniforms.rows(reparsed))==count and uniforms.rows(reparsed)[current['index']]['asset']==901
+        uniforms.set_available(reparsed,reopened,uniforms.owner(reparsed,team),variant,False);reparsed.save(reopened.of_type('ROST')[0].component_path());assert uniforms.disabled(Roster(reopened.of_type('ROST')[0].blocks()[0]))
+        uniforms.set_available(reparsed,reopened,uniforms.owner(reparsed,team),variant,True);reparsed.save(reopened.of_type('ROST')[0].component_path());assert not uniforms.disabled(Roster(reopened.of_type('ROST')[0].blocks()[0]))
+        assert all(before[name]==hashes(destination/'assets'/name) for name in names)
+        report.update(private_home_clone=clone['folders'],alternate_disable_restore=True,reopened_banks=len(Workspace(destination/'assets').banks))
     (destination/'smoke-report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

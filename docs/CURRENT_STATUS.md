@@ -21,8 +21,8 @@ to Xbox localization IDs. Band-bank clips retain their original numeric labels.
 Combined authored jersey/shorts and standalone shoe previews resolve Xbox cloth and uniform
 artwork by CRC identities. The embedded cloth stream descriptors are 24 bytes,
 versus 16 for GPU-backed scenes. Thirty native option lists supply appearance
-dropdowns, including hair, tattoos, post and free-throw animations. Name/number
-layers, footwear and remaining roster ownership fields are still incomplete.
+dropdowns, including hair, tattoos, post and free-throw animations. Authored number/name layers are now implemented. Footwear, eligibility and
+remaining player-class fields are still incomplete.
 
 Windows onedir packaging passes empty and installed-assets startup checks. The
 build excludes an unrelated Poppler ICU search path that otherwise introduced
@@ -48,7 +48,7 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 77 tests.
+not yet migrated the installed game. The current editor suite passes 94 tests.
 
 The complete paired corpus (40 pairs / 2,361 records) now passes private
 source-removal checks in both reader implementations. Installed migration and
@@ -70,3 +70,16 @@ vertex order and exact triangle topology must remain intact. The writer changes
 only float3 positions, preserving UVs, weights, rigging, materials and unknown
 bytes. It edits shared cloth, not independent per-uniform meshes. Additional
 vertex layouts, simulated/rest-pose behavior and gameplay remain unverified.
+
+School relationships and uniform authoring now have dedicated dialogs and shared
+CLI backends. All 443 schools / 39 conferences validate, with 5,607 assigned
+players. Checked transfers, lineup order, eight team references and reciprocal
+conference moves support undo and preserve unrelated fields.
+
+Uniform editing validates artwork folders and provides neckline/slot/unlock
+controls, private routing, private Home/Away/alternate artwork clones and alternate
+availability with preserved dormant rows. The authored 3D view displays front/back
+numbers and curved surnames. All 1,976 Xbox font atlas/metric pairs validate;
+exact-color indexed image import and bounded metric editing write owning files.
+Static cloth/body/material limitations and gameplay acceptance remain explicit.
+See ROSTER_RELATIONSHIPS.md and UNIFORMS.md for evidence and operation details.

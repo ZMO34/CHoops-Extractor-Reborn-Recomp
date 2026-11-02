@@ -84,3 +84,8 @@ source SHA256, per-mesh counts and exact live topology, patches only the three
 big-endian floats, then reparses. All 33 identified cloth resources pass private
 round-trip and single-coordinate checks. Exports use model-space positions;
 instance matrices and runtime cloth/skin deformation remain unchanged.
+
+The checked school membership/relationship profile and its entire Xbox corpus
+validation are documented in [ROSTER_RELATIONSHIPS.md](ROSTER_RELATIONSHIPS.md).
+Indexed uniform palette/mip/metric layouts, authored placement and the new
+Recomp-only dormant-row protocol are documented in [UNIFORMS.md](UNIFORMS.md).

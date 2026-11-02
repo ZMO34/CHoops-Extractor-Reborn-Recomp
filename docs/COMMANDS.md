@@ -35,3 +35,16 @@ selected reviewed identities; omit `--resources` to apply all changed tracks.
 `import-cloth-obj RESOURCE_KEY cloth.obj` saves supported model-space positions.
 `tools/cloth_smoke.py --assets GAME/assets --output output/NEW_PRIVATE_FOLDER`
 checks every identified cloth resource on private copies without launching a game.
+
+Relationship commands: `roster-links`, `assign-link TEAM FIELD TARGET`,
+`move-player PLAYER TEAM`, `move-conference TEAM CONFERENCE`, and
+`reorder-player TEAM PLAYER POSITION`. Use `none` for unassignment.
+Uniform commands: `uniform-edit ROW --asset ID --shape CODE --variant CODE
+--unlock CODE`, `uniform-detach TEAM`, `uniform-clone TEAM ROW UNUSED_ASSET`,
+`uniform-available TEAM SLOT on|off`, `export-font-atlas RESOURCE out.png`, and
+`import-font-atlas RESOURCE edited.png`. Writes use the same checked GUI backends.
+
+Private checks: `tools/relationship_smoke.py --assets GAME/assets --output
+output/NEW_FOLDER`, `tools/asset_smoke.py --assets GAME/assets --output
+output/NEW_FOLDER --full-editor`, and `tools/roster_ui_smoke.py --assets
+GAME/assets --output output/NEW_FOLDER`. These do not launch or control a game.

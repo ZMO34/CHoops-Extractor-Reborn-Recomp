@@ -76,3 +76,11 @@ and retain vertex order/count and exact triangulated faces. Import cloth positio
 validates the source and topology, then saves positions directly to its component.
 UV, normal, rigging and topology edits are not imported. Shared cloth affects all
 uniforms using that resource; this is distinct from editing a uniform DDS.
+
+Roster now includes School relationships and Uniform editor. The first handles
+checked school links, player transfers/lineup and conference membership. The
+second edits uniform routing, clones private artwork and previews authored player
+numbers/surnames. Both use pending roster edits until Save roster; artwork Save
+and folder-creation actions explicitly write their owning files. See
+[roster relationships](ROSTER_RELATIONSHIPS.md) and [uniforms](UNIFORMS.md).
+Indexed uniform atlases also preview/export/import from the Textures library.

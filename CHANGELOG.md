@@ -24,3 +24,8 @@
 - Omit obsolete paired payloads from fresh direct imports after component extraction.
 
 - Add source-bound Xbox cloth OBJ position editing and validate all 33 identified resources.
+
+- Add checked school relationship dialogs, player transfers/lineups and reciprocal conference moves.
+- Add uniform editing, independent routing/artwork clones and alternate availability.
+- Decode/edit Xbox indexed glyphs and metrics; render authored numbers and curved surnames.
+- Fix source-row orientation and typed scalar bindings in the 3D preview.

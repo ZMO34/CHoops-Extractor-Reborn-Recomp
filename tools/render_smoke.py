@@ -15,7 +15,7 @@ from choops_recomp.dds import image
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--assets',required=True);p.add_argument('--resource',default='s000.iff/9');p.add_argument('--uniform',type=int);p.add_argument('--shoe');p.add_argument('--expect-textured',action='store_true');p.add_argument('--output',required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--assets',required=True);p.add_argument('--resource',default='s000.iff/9');p.add_argument('--uniform',type=int);p.add_argument('--number',type=int);p.add_argument('--surname',default='');p.add_argument('--yaw',type=float,default=30);p.add_argument('--shoe');p.add_argument('--expect-textured',action='store_true');p.add_argument('--output',required=True);a=p.parse_args()
     app=QApplication([]);fmt=QSurfaceFormat();fmt.setVersion(2,0);fmt.setDepthBufferSize(24)
     context=QOpenGLContext();context.setFormat(fmt)
     if not context.create():raise RuntimeError('Native OpenGL context unavailable')
@@ -33,10 +33,10 @@ def main():
         from choops_recomp.roster import Roster
         from choops_recomp.uniforms import rows
         from choops_recomp.uniform_preview import preview as uniform_preview
-        result=uniform_preview(w,rows(Roster(w.of_type('ROST')[0].blocks()[0]))[a.uniform]);images=result['images']
+        result=uniform_preview(w,rows(Roster(w.of_type('ROST')[0].blocks()[0]))[a.uniform],number=a.number,surname=a.surname);images=result['images']
     else:
         r=w.resource(a.resource);blocks=r.blocks();result=preview(blocks);images={t['index']:image(t['dds']) for t in textures(blocks) if 'dds' in t}
-    view=InvisibleView();view.resize(1000,700);view.initializeGL();view.set_scene(result['meshes'],images)
+    view=InvisibleView();view.resize(1000,700);view.initializeGL();view.set_scene(result['meshes'],images);view.yaw=a.yaw
     framebuffer_format=QOpenGLFramebufferObjectFormat();framebuffer_format.setAttachment(QOpenGLFramebufferObject.Attachment.CombinedDepthStencil)
     fbo=QOpenGLFramebufferObject(1000,700,framebuffer_format);fbo.bind();view.gl.glViewport(0,0,1000,700);view.paintGL();view.gl.glFinish()
     output=Path(a.output);output.parent.mkdir(parents=True,exist_ok=True)

@@ -1,6 +1,6 @@
 # Test report
 
-- Core and Qt suite: **77 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **94 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -74,3 +74,19 @@ expanded texture layouts and full feature parity are not certified by these test
   round trips. A single X coordinate changes at most its four float bytes, with
   all other source bytes preserved. Synthetic tests reject changed topology,
   nonfinite coordinates and stale source companions before writing.
+
+- Relationship corpus: 443 schools, 39 conferences, 5,607 assigned players, no
+  ambiguous membership/backlinks. All eight assignments, transfer, unassignment,
+  lineup and realignment/undo pass on a separate in-memory document.
+- New tests cover full/shared roster rejection, byte preservation, reciprocal
+  conference changes and typed chooser rejection without partial writes.
+- All **1,976** uniform atlas/metric pairs validate, including 54 wide atlases.
+  Private font PNG round trips are byte-identical; exact-color replacement,
+  padding preservation, metric bounds, 00 and surname composition pass.
+- Private Home clone, source-template preservation and alternate disable/save/
+  reopen/restore pass. Direct runtime preparation sees seven banks and zero stock
+  replacement bindings, without rebuilding packed files.
+- Native invisible GL front/back renders display authored number 31 and IATI;
+  the vertical texture mirror and scalar-float binding issue are fixed.
+- Both new dialogs pass offscreen creation and layout inspection with the system
+  font explicitly registered for the Windows offscreen plugin.

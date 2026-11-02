@@ -20,3 +20,9 @@ Upstream documentation:
 - https://github.com/vgmstream/vgmstream/blob/master/doc/USAGE.md
 - https://github.com/vgmstream/vgmstream/blob/master/doc/TXTH.md
 - https://github.com/ZMO34/CHoops-Extractor-Reborn
+
+Authored glyph composition and polar-placement drawing were adapted from the
+same v1.23 indexed_font/services/viewer baseline, then checked using Xbox atlas
+palettes, metrics, template dimensions and placement records. The indexed Xbox
+descriptor decoder and XRUFv001 dormant-row metadata are Recomp implementations;
+no source-platform executable addresses or saved-data profiles are included.

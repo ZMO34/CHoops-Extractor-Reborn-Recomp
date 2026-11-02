@@ -28,8 +28,8 @@ to Xbox localization IDs. Band-bank clips retain their original numeric labels.
 Combined authored jersey/shorts and standalone shoe previews resolve Xbox cloth and uniform
 artwork by CRC identities. The embedded cloth stream descriptors are 24 bytes,
 versus 16 for GPU-backed scenes. Thirty native option lists supply appearance
-dropdowns, including hair, tattoos, post and free-throw animations. Name/number
-layers, footwear and remaining roster ownership fields are still incomplete.
+dropdowns, including hair, tattoos, post and free-throw animations. Authored number/name layers are now implemented. Footwear, eligibility and
+remaining player-class fields are still incomplete.
 
 Windows onedir packaging passes empty and installed-assets startup checks. The
 build excludes an unrelated Poppler ICU search path that otherwise introduced
@@ -55,7 +55,7 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 77 tests.
+not yet migrated the installed game. The current editor suite passes 94 tests.
 
 The complete paired corpus (40 pairs / 2,361 records) now passes private
 source-removal checks in both reader implementations. Installed migration and
@@ -78,6 +78,19 @@ only float3 positions, preserving UVs, weights, rigging, materials and unknown
 bytes. It edits shared cloth, not independent per-uniform meshes. Additional
 vertex layouts, simulated/rest-pose behavior and gameplay remain unverified.
 
+School relationships and uniform authoring now have dedicated dialogs and shared
+CLI backends. All 443 schools / 39 conferences validate, with 5,607 assigned
+players. Checked transfers, lineup order, eight team references and reciprocal
+conference moves support undo and preserve unrelated fields.
+
+Uniform editing validates artwork folders and provides neckline/slot/unlock
+controls, private routing, private Home/Away/alternate artwork clones and alternate
+availability with preserved dormant rows. The authored 3D view displays front/back
+numbers and curved surnames. All 1,976 Xbox font atlas/metric pairs validate;
+exact-color indexed image import and bounded metric editing write owning files.
+Static cloth/body/material limitations and gameplay acceptance remain explicit.
+See ROSTER_RELATIONSHIPS.md and UNIFORMS.md for evidence and operation details.
+
 
 ---
 
@@ -95,19 +108,20 @@ writer, preservation test or integration requirement.
 | DDS preview/export/import | BC1–BC5 2D implemented | Other Xbox formats, mip/cubemap parity, batch workflows |
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
 | Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
-| Uniform/shoe previews | Combined jersey/shorts and authored shoe upper/sole DDS implemented | Numbers/name glyphs, preview selection polish, runtime material effects |
+| Uniform/shoe previews | Authored cloth, front/back numbers, curved surnames, school/player selection and shoe artwork implemented | Runtime cloth/body/material effects and gameplay acceptance |
+| Uniform indexed fonts | All 1,976 atlas/metric pairs validated; exact-color image and metric writers, preview implemented | Fixed native dimensions/palette capacity; gameplay acceptance |
 | Uniform OBJ workflow | Source-bound float3 cloth OBJ import/export in GUI/CLI; all 33 identified resources pass private preservation checks | Additional vertex layouts, rest/skin deformation parity and gameplay acceptance |
 | Court surface controls | Pending | Xbox geometry bindings and preservation tests |
 | Roster names, jersey, height, position | Implemented | Search/filter and related side panels |
 | Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare | School filters and richer selection controls |
 | Appearance/equipment | 33 Xbox-verified properties, 30 native option lists | Class/redshirt/scholarship, footwear and jump-shot bindings |
 | Palette | 31 RGBA slots | Xbox semantic captions and preview bindings |
-| School/coach/arena relationships | Xbox corpus validated | Checked assignment UI, reciprocal writers |
-| Player transfers / scholarships | Pending | Xbox native ownership/count/slot contract |
-| Conference realignment/history | Pending | Xbox consumers, reciprocal membership writer |
+| School/coach/arena relationships | Checked school dialog and CLI assignments for arena, coach, assistants and rivals | Gameplay/Legacy acceptance; shared arena identity intentionally retained |
+| Player transfers / scholarships | Checked 18-slot transfers, unassignment and lineup order implemented | Scholarship/eligibility fields and gameplay acceptance |
+| Conference realignment/history | Checked reciprocal realignment in GUI/CLI implemented | Historical statistics editing and gameplay acceptance |
 | Roster CSV and selective import | Implemented confirmed fields, source-bound review, one-step undo | Additional Xbox fields as verified |
-| Existing uniform asset/shape editing | Structural writer implemented | Asset-existence validation and preview |
-| New uniforms and asset links | Private-copy addition/reopen/pixel identities and sorted virtual TOC tests passed | Gameplay acceptance, stadium/menu-logo independence |
+| Existing uniform asset/shape editing | Checked editor, artwork validation, neckline/slot/unlock, private routing/artwork cloning and alternate availability implemented | Gameplay acceptance of new routing/dormant state |
+| New uniforms and asset links | Private Home/Away/alternate artwork and additive folders pass preservation/reopen/direct-map checks | Gameplay acceptance; stadium/menu-logo independence remains separate |
 | Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing and DDS/image artwork controls implemented; runtime acceptance pending |
 | WAV export/import/preview | Implemented | Native loop/seek and duration parity, packaging acceptance |
 | Batch WAV | Export, changed-track review, selective GUI/CLI apply and write-failure rollback implemented | Process-interruption recovery polish and gameplay acceptance |
@@ -129,7 +143,7 @@ evidence before adoption; incomplete research is not silently marked obsolete.
 
 # Test report
 
-- Core and Qt suite: **77 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **94 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -203,3 +217,19 @@ expanded texture layouts and full feature parity are not certified by these test
   round trips. A single X coordinate changes at most its four float bytes, with
   all other source bytes preserved. Synthetic tests reject changed topology,
   nonfinite coordinates and stale source companions before writing.
+
+- Relationship corpus: 443 schools, 39 conferences, 5,607 assigned players, no
+  ambiguous membership/backlinks. All eight assignments, transfer, unassignment,
+  lineup and realignment/undo pass on a separate in-memory document.
+- New tests cover full/shared roster rejection, byte preservation, reciprocal
+  conference changes and typed chooser rejection without partial writes.
+- All **1,976** uniform atlas/metric pairs validate, including 54 wide atlases.
+  Private font PNG round trips are byte-identical; exact-color replacement,
+  padding preservation, metric bounds, 00 and surname composition pass.
+- Private Home clone, source-template preservation and alternate disable/save/
+  reopen/restore pass. Direct runtime preparation sees seven banks and zero stock
+  replacement bindings, without rebuilding packed files.
+- Native invisible GL front/back renders display authored number 31 and IATI;
+  the vertical texture mirror and scalar-float binding issue are fixed.
+- Both new dialogs pass offscreen creation and layout inspection with the system
+  font explicitly registered for the Windows offscreen plugin.

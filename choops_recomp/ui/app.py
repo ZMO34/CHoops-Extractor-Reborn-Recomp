@@ -48,7 +48,7 @@ class RosterModel(QAbstractTableModel):
         if role==Qt.ItemDataRole.DisplayRole:return self.columns[section].replace('_',' ').title() if orientation==Qt.Orientation.Horizontal else str(section)
     def flags(self,index):
         flags=super().flags(index)
-        if index.column()>0 and not (self.table=='uniforms' and self.columns[index.column()] not in ('asset','shape')):flags|=Qt.ItemFlag.ItemIsEditable
+        if index.column()>0 and self.table!='uniforms':flags|=Qt.ItemFlag.ItemIsEditable
         return flags
     def setData(self,index,value,role=Qt.ItemDataRole.EditRole):
         if role!=Qt.ItemDataRole.EditRole:return False
@@ -120,12 +120,13 @@ class Studio(QMainWindow):
         self.cutaway=QCheckBox('Cutaway');self.cutaway.setChecked(True);self.cutaway.toggled.connect(self.toggle_cutaway);row.addWidget(self.cutaway)
         self.scene_textures=QComboBox();row.addWidget(self.scene_textures,1);export=QPushButton('Export DDS');export.clicked.connect(self.export_scene_dds);row.addWidget(export);replace=QPushButton('Replace DDS…');replace.clicked.connect(self.replace_scene_dds);row.addWidget(replace);model_page['layout'].addLayout(row)
         row=QHBoxLayout();self.uniform_picker=QComboBox();self.uniform_picker.setEditable(True);row.addWidget(self.uniform_picker,1);self.uniform_shape=QComboBox();self.uniform_shape.addItems(['U','V','V triangle','Triangle','Wishbone']);row.addWidget(self.uniform_shape);self.uniform_build=QComboBox();self.uniform_build.addItems(['reg','thin','fat']);row.addWidget(self.uniform_build);self.shorts_build=QComboBox();self.shorts_build.addItems(['reg','thin','fat']);row.addWidget(self.shorts_build);preview=QPushButton('Preview uniform');preview.clicked.connect(self.preview_uniform);row.addWidget(preview);model_page['layout'].addLayout(row)
+        self.uniform_picker.currentIndexChanged.connect(self.select_uniform_shape)
         row=QHBoxLayout();self.shoe_picker=QComboBox();self.shoe_picker.setEditable(True);row.addWidget(self.shoe_picker,1);preview=QPushButton('Preview shoes');preview.clicked.connect(self.preview_shoes);row.addWidget(preview);model_page['layout'].addLayout(row)
         self.texture_view=QLabel('Select a texture');self.texture_view.setAlignment(Qt.AlignmentFlag.AlignCenter);self.texture_view.setMinimumSize(400,400);self.pages['TXTR']['layout'].addWidget(self.texture_view,1)
         self.texture_details=QLabel();self.pages['TXTR']['layout'].addWidget(self.texture_details)
         row=QHBoxLayout()
-        for text,slot in [('Export DDS',self.export_texture),('Replace DDS…',self.replace_texture)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
-        self.pages['TXTR']['layout'].addLayout(row);self.current_texture=None
+        for text,slot in [('Export artwork',self.export_texture),('Replace artwork…',self.replace_texture)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
+        self.pages['TXTR']['layout'].addLayout(row);self.current_texture=None;self.current_font=None
         self.audio_details=QPlainTextEdit();self.audio_details.setReadOnly(True);self.pages['AUDO']['layout'].addWidget(self.audio_details)
         self.audio_cover=QLabel();self.audio_cover.setAlignment(Qt.AlignmentFlag.AlignCenter);self.audio_cover.setMaximumHeight(260);self.pages['AUDO']['layout'].addWidget(self.audio_cover);self.audio_cover_resource=None
         row=QHBoxLayout()
@@ -141,7 +142,7 @@ class Studio(QMainWindow):
         self.current_audio=None
         self.audio_player=None;self.audio_preview_directory=None
         roster_page=QWidget();layout=QVBoxLayout(roster_page);row=QHBoxLayout();self.roster_tables=QComboBox();self.roster_tables.currentTextChanged.connect(self.change_table);row.addWidget(self.roster_tables)
-        for text,slot in [('Undo',self.undo),('Redo',self.redo),('Channels…',self.edit_rating),('Team palette…',self.edit_palette),('New uniform…',self.add_uniform),('Save roster',self.save_roster)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
+        for text,slot in [('Undo',self.undo),('Redo',self.redo),('School relationships…',self.edit_relationships),('Uniform editor…',self.edit_uniforms),('Channels…',self.edit_rating),('Team palette…',self.edit_palette),('New uniform…',self.add_uniform),('Save roster',self.save_roster)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         layout.addLayout(row);row=QHBoxLayout()
         for text,slot in [('Export CSV…',self.export_csv),('Import / compare…',self.import_csv),('Copy ratings',self.copy_ratings),('Paste ratings to selected',self.paste_ratings)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         layout.addLayout(row);self.roster_view=QTableView();split=QSplitter();split.addWidget(self.roster_view);self.player_tabs=QTabWidget();self.player_properties=QTableView();self.player_ratings=QTableView();self.player_tabs.addTab(self.player_properties,'Player / Appearance');self.player_tabs.addTab(self.player_ratings,'Ratings');split.addWidget(self.player_tabs);layout.addWidget(split);layout.addWidget(QLabel('Xbox profile: 316-byte player rows. Unknown source bits are preserved.'));self.tabs.addTab(roster_page,'Roster')
@@ -205,6 +206,7 @@ class Studio(QMainWindow):
         self.workspace_generation+=1;generation=self.workspace_generation;self.statusBar().showMessage('Reading Xbox assets…')
         self.run_job(lambda progress:Workspace(path,progress),lambda result:self.loaded(result) if generation==self.workspace_generation else None)
     def loaded(self,workspace):
+        self.current_font=None
         self.audio_cover_resource=None;self.audio_cover.clear()
         self.stop_audio();self.generation+=1;self.current_texture=None;self.current_audio=None;self.scene_resource=None;self.scene_data=None;self.roster=None;self.roster_resource=None;self.roster_view.setModel(None);self.player_properties.setModel(None);self.player_ratings.setModel(None);self.scene_textures.clear();self.uniform_picker.clear();self.roster_tables.clear();self.audio_details.clear();self.texture_view.clear();self.texture_details.clear()
         if hasattr(self.view,'set_scene'):self.view.set_scene([],{})
@@ -237,6 +239,38 @@ class Studio(QMainWindow):
         self.property_model=PlayerDetailsModel(self.roster,index.row());self.rating_model=PlayerDetailsModel(self.roster,index.row(),True)
         for view,model in ((self.player_properties,self.property_model),(self.player_ratings,self.rating_model)):
             model.error.connect(self.error);view.setModel(model);view.resizeColumnsToContents()
+    def selected_school(self):
+        if self.roster_tables.currentText()=='teams' and self.roster_view.currentIndex().isValid():return self.roster_view.currentIndex().row()
+        if self.roster_tables.currentText()=='players' and self.roster_view.currentIndex().isValid():
+            from ..relationships import catalog
+            owners=catalog(self.roster)['schools'].get(self.roster_view.currentIndex().row(),[])
+            if len(owners)==1:return owners[0]
+        return 0
+    def edit_relationships(self):
+        if self.roster is None:return
+        from .relationships import RelationshipsDialog
+        try:
+            dialog=RelationshipsDialog(self,self.roster,self.selected_school());dialog.changed.connect(self.roster_changed);dialog.exec()
+        except (ValueError,OSError) as exc:self.error(str(exc))
+    def edit_uniforms(self):
+        if self.roster is None or self.workspace is None:return
+        from .uniform_editor import UniformEditor
+        try:
+            dialog=UniformEditor(self,self.roster,self.workspace,self.selected_school());dialog.changed.connect(self.roster_changed);dialog.exec()
+        except (ValueError,OSError) as exc:self.error(str(exc))
+    def roster_changed(self):
+        self.change_table(self.roster_tables.currentText())
+        if self.roster is None:return
+        from ..uniforms import rows,owner,name
+        previous=self.uniform_picker.currentText();self.uniform_picker.blockSignals(True);self.uniform_picker.clear();owners={}
+        for team in self.roster.rows['teams']:owners.setdefault(owner(self.roster,team['index']),[]).append(team['short_name'])
+        for uniform in rows(self.roster):
+            caption=' / '.join(dict.fromkeys(owners.get(uniform['owner'],[f"Owner {uniform['owner']}"])))
+            self.uniform_picker.addItem(f"{caption} • {name(uniform['asset'],uniform['variant'])}",uniform['index'])
+        match=self.uniform_picker.findText(previous)
+        if match>=0:self.uniform_picker.setCurrentIndex(match)
+        self.uniform_picker.blockSignals(False)
+        self.select_uniform_shape()
     def change_audio_category(self,index):
         from ..audio_catalog import CATEGORIES
         if not 0<=index<len(CATEGORIES):return
@@ -256,8 +290,14 @@ class Studio(QMainWindow):
                 result['resource']=r;result['generation']=generation;return result
             self.run_job(decode,self.show_scene)
         elif kind=='TXTR':
+            self.current_font=None
             try:
-                blocks=r.blocks();payload=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None);path=r.folder/'texture.dds'
+                blocks=r.blocks()
+                import zlib
+                if r.record['id'] in (zlib.crc32(b'names')&0xffffffff,zlib.crc32(b'jersey_numbers')&0xffffffff) and len(blocks[0])>=12 and blocks[0][8:12]==bytes.fromhex('24820002'):
+                    from ..uniform_fonts import atlas
+                    image=atlas(blocks);self.current_font=r;self.current_texture=None;self.show_pil_image(image);self.texture_details.setText(r.label+f' • Xbox indexed font {image.width}×{image.height} • export/import PNG');return
+                payload=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None);path=r.folder/'texture.dds'
                 if path.exists():payload=path.read_bytes()
                 self.current_texture=(r,payload,path);self.show_image(payload);self.texture_details.setText(r.label+' • '+str(dds.info(payload)))
             except ValueError as exc:self.texture_details.setText(str(exc));self.current_texture=None
@@ -274,6 +314,11 @@ class Studio(QMainWindow):
         if hasattr(self.view,'set_scene'):self.view.set_scene(result['meshes'],images)
         self.pages['SCNE']['details'].setPlainText(f"{len(result['meshes'])}/{result['declared_parts']} mesh parts • {sum(len(m['vertices'])//3 for m in result['meshes']):,} triangles\n"+'\n'.join(result['warnings']))
         self.statusBar().showMessage('Xbox scene ready')
+    def select_uniform_shape(self):
+        if self.roster is None:return
+        from ..uniforms import rows
+        index=self.uniform_picker.currentData();uniforms=rows(self.roster)
+        if isinstance(index,int) and 0<=index<len(uniforms):self.uniform_shape.setCurrentIndex(uniforms[index]['shape'])
     def preview_uniform(self):
         if not self.workspace or not self.roster:return
         from ..uniforms import rows
@@ -295,7 +340,9 @@ class Studio(QMainWindow):
     def toggle_cutaway(self,checked):
         if hasattr(self.view,'set_scene'):self.view.cutaway=checked;self.view.set_scene(self.view.meshes,self.view.images)
     def show_image(self,payload):
-        image=dds.image(payload);data=image.tobytes();q=QImage(data,image.width,image.height,image.width*4,QImage.Format.Format_RGBA8888).copy();self.texture_view.setPixmap(QPixmap.fromImage(q).scaled(700,600,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
+        self.show_pil_image(dds.image(payload))
+    def show_pil_image(self,image):
+        image=image.convert('RGBA');data=image.tobytes();q=QImage(data,image.width,image.height,image.width*4,QImage.Format.Format_RGBA8888).copy();self.texture_view.setPixmap(QPixmap.fromImage(q).scaled(700,600,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
     def show_audio_cover(self):
         self.audio_cover_resource=None;self.audio_cover.clear()
         if not self.current_audio:return
@@ -324,10 +371,24 @@ class Studio(QMainWindow):
             save_texture(resource,payload);self.show_audio_cover();self.statusBar().showMessage('Shared Xbox cover DDS saved directly to its resource folder')
         except ValueError as exc:self.error(str(exc))
     def export_texture(self):
+        if self.current_font is not None:
+            from ..uniform_fonts import atlas
+            resource=self.current_font;path,_=QFileDialog.getSaveFileName(self,'Export Xbox indexed font','','PNG (*.png)')
+            if path:atlas(resource.blocks()).save(path)
+            return
         if not self.current_texture:return
         path,_=QFileDialog.getSaveFileName(self,'Export DDS','','DDS (*.dds)')
         if path:Path(path).write_bytes(self.current_texture[1])
     def replace_texture(self):
+        if self.current_font is not None:
+            resource=self.current_font;path,_=QFileDialog.getOpenFileName(self,'Save Xbox indexed font artwork','','Artwork (*.png *.dds *.tga *.bmp)')
+            if path:
+                try:
+                    if self.workspace is not resource.workspace:raise ValueError('Source folder changed while selecting artwork')
+                    from ..uniform_fonts import save_atlas,atlas
+                    save_atlas(resource,path);self.show_pil_image(atlas(resource.blocks()));self.statusBar().showMessage('Indexed font saved directly to its component. Restart the recomp to apply.')
+                except (ValueError,OSError) as exc:self.error(str(exc))
+            return
         if not self.current_texture:return
         r,old,target=self.current_texture
         path,_=QFileDialog.getOpenFileName(self,'Replace texture artwork','','Artwork (*.dds *.png *.jpg *.jpeg *.tga *.bmp)')
@@ -431,7 +492,7 @@ class Studio(QMainWindow):
                 save_audio(self.current_audio,path);self.statusBar().showMessage('WAV saved directly to assets. Restart the updated recomp to apply.')
             except ValueError as exc:self.error(str(exc))
     def undo(self):
-        if self.roster:self.roster.undo();self.change_table(self.roster_tables.currentText())
+        if self.roster:self.roster.undo();self.roster_changed()
     def export_csv(self):
         if not self.roster:return
         path,_=QFileDialog.getSaveFileName(self,'Export Xbox roster CSV','','CSV (*.csv)')
@@ -487,7 +548,7 @@ class Studio(QMainWindow):
             self.statusBar().showMessage('Created '+', '.join(result['folders']));self.open_assets(self.workspace.assets)
         except (ValueError,OSError) as exc:self.error(str(exc))
     def redo(self):
-        if self.roster:self.roster.redo();self.change_table(self.roster_tables.currentText())
+        if self.roster:self.roster.redo();self.roster_changed()
     def save_roster(self):
         if not self.roster:return
         try:self.roster.save(self.roster_resource.component_path());self.statusBar().showMessage('Xbox roster saved. Restart the updated recomp to apply.')

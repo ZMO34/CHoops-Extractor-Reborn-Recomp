@@ -138,7 +138,7 @@ writer, preservation test or integration requirement.
 
 | Feature | Current state | Work remaining |
 | --- | --- | --- |
-| Open installed assets; search resources | Implemented | Cancelable indexing and diagnostics polish |
+| Open installed assets; search resources | Implemented with cancellable indexing | Richer structured diagnostics |
 | Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | All 40 paired banks pass private source-removal checks; installed migration and gameplay acceptance pending |
 | DDS preview/export/import | BC1–BC5, indexed, raw 2D/cubemap base editing implemented | Full raw mip-chain replacement and batch workflows |
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
@@ -147,13 +147,13 @@ writer, preservation test or integration requirement.
 | Uniform indexed fonts | All 1,976 atlas/metric pairs validated; exact-color image and metric writers, preview implemented | Fixed native dimensions/palette capacity; gameplay acceptance |
 | Uniform OBJ workflow | Source-bound float3 cloth OBJ import/export in GUI/CLI; all 33 identified resources pass private preservation checks | Additional vertex layouts, rest/skin deformation parity and gameplay acceptance |
 | Court surface controls | Pending | Xbox geometry bindings and preservation tests |
-| Roster names, jersey, height, position | Implemented | Search/filter and related side panels |
-| Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare | School filters and richer selection controls |
+| Roster names, jersey, height, position | Implemented with search, school/unassigned filters and numeric sorting | Gameplay acceptance |
+| Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare and school filters | Gameplay acceptance |
 | Appearance/equipment | 46 Xbox-verified properties, native option lists | Runtime acceptance |
 | Palette | 31 RGBA slots | Xbox semantic captions and preview bindings |
 | School/coach/arena relationships | Checked school dialog and CLI assignments for arena, coach, assistants and rivals | Gameplay/Legacy acceptance; shared arena identity intentionally retained |
 | Player transfers / scholarships | Checked 18-slot transfers, unassignment and lineup order implemented | Gameplay acceptance |
-| Conference realignment/history | Checked reciprocal realignment in GUI/CLI implemented | Four historical scalars implemented; unknown recency/order semantics and gameplay acceptance |
+| Conference realignment/history | Checked reciprocal realignment and four historical scalars implemented | Unknown recency/order semantics and gameplay acceptance |
 | Roster CSV and selective import | Implemented confirmed fields, source-bound review, one-step undo | Additional Xbox fields as verified |
 | Existing uniform asset/shape editing | Checked editor, artwork validation, neckline/slot/unlock, private routing/artwork cloning and alternate availability implemented | Gameplay acceptance of new routing/dormant state |
 | New uniforms and asset links | Private Home/Away/alternate artwork and additive folders pass preservation/reopen/direct-map checks | Gameplay acceptance; stadium/menu-logo independence remains separate |
@@ -315,3 +315,9 @@ failures and decodes all non-BC/indexed/packed-base pixels. This is not a
 16,093-resource write round trip. Combined native invisible GL: 84 meshes,
 50 DDS images. Private uniform creation/Home clone/alternate disable-restore
 repassed with original templates unchanged. No game or input automation used.
+
+Nine real Xbox private-copy texture checks cover all six new raw formats,
+three cubemap formats and the 5x5 packed BC4 base. Unchanged DDS imports are
+byte-identical; flipping one exported payload byte changes exactly one owning
+component byte. All source resources remain unchanged. Packaged hidden startup
+and relationship/uniform/font dialog checks pass with all 3,378 banks indexed.

@@ -318,7 +318,11 @@ class Studio(QMainWindow):
         if self.roster_tables.currentText()!='players' or not index.isValid():self.clear_player_details();return
         player=self.roster_row(index);self.property_model=PlayerDetailsModel(self.roster,player,category='appearance');self.rating_model=PlayerDetailsModel(self.roster,player,True);self.eligibility_model=PlayerDetailsModel(self.roster,player,category='eligibility');self.footwear_model=PlayerDetailsModel(self.roster,player,category='footwear')
         for view,model in ((self.player_properties,self.property_model),(self.player_ratings,self.rating_model),(self.player_eligibility,self.eligibility_model),(self.player_footwear,self.footwear_model)):
-            model.error.connect(self.error);view.setModel(model);view.resizeColumnsToContents()
+            model.error.connect(self.error);model.dataChanged.connect(lambda *args,source=player:self.refresh_player_summary(source));view.setModel(model);view.resizeColumnsToContents()
+        self.refresh_player_summary(player)
+    def refresh_player_summary(self,player):
+        if self.roster is None:return
+        if hasattr(self,'roster_model') and self.roster_model.table=='players':self.roster_model.dataChanged.emit(self.roster_model.index(player,0),self.roster_model.index(player,self.roster_model.columnCount()-1))
         row=self.roster.rows['players'][player];self.player_summary.setText(f"{row['first_name']} {row['last_name']} • #{row['jersey_number']} • source player {player} • "+FIELDS['class_code']['choices'].get(str(row['class_code']),'Unknown class'))
     def selected_school(self):
         if self.roster_tables.currentText()=='teams' and self.roster_view.currentIndex().isValid():return self.roster_row()
@@ -378,7 +382,7 @@ class Studio(QMainWindow):
                 import zlib
                 if len(blocks[0])>=12 and blocks[0][8:12]==bytes.fromhex('24820002'):
                     from ..uniform_fonts import atlas
-                    image=atlas(blocks);self.current_font=r;self.current_texture=None;self.show_pil_image(image);self.texture_details.setText(r.label+f' • Xbox indexed font {image.width}×{image.height} • export/import PNG');return
+                    image=atlas(blocks);self.current_font=r;self.current_texture=None;self.texture_face.setEnabled(False);self.show_pil_image(image);self.texture_details.setText(r.label+f' • Xbox indexed font {image.width}×{image.height} • export/import PNG');return
                 payload=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None);path=r.folder/'texture.dds'
                 descriptor=dds.info(payload)
                 if 'raw_format' not in descriptor and not descriptor.get('direct_component') and path.exists():payload=path.read_bytes()
@@ -545,7 +549,8 @@ class Studio(QMainWindow):
         if not t:return
         path,_=QFileDialog.getSaveFileName(self,'Export embedded Xbox DDS','','DDS (*.dds)')
         resource=t.get('source_resource',self.scene_resource);local=t.get('source_index',t['index']);current=resource.folder/f"texture_{local:04d}.dds"
-        if path:Path(path).write_bytes(current.read_bytes() if current.is_file() else t['dds'])
+        descriptor=dds.info(t['dds'])
+        if path:Path(path).write_bytes(current.read_bytes() if current.is_file() and 'raw_format' not in descriptor and not descriptor.get('direct_component') else t['dds'])
     def replace_scene_dds(self):
         t=self.scene_texture()
         if not t:return

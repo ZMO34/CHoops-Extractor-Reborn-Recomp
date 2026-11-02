@@ -101,3 +101,9 @@ failures and decodes all non-BC/indexed/packed-base pixels. This is not a
 16,093-resource write round trip. Combined native invisible GL: 84 meshes,
 50 DDS images. Private uniform creation/Home clone/alternate disable-restore
 repassed with original templates unchanged. No game or input automation used.
+
+Nine real Xbox private-copy texture checks cover all six new raw formats,
+three cubemap formats and the 5x5 packed BC4 base. Unchanged DDS imports are
+byte-identical; flipping one exported payload byte changes exactly one owning
+component byte. All source resources remain unchanged. Packaged hidden startup
+and relationship/uniform/font dialog checks pass with all 3,378 banks indexed.

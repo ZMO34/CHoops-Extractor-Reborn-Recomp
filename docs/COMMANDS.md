@@ -48,3 +48,8 @@ Private checks: `tools/relationship_smoke.py --assets GAME/assets --output
 output/NEW_FOLDER`, `tools/asset_smoke.py --assets GAME/assets --output
 output/NEW_FOLDER --full-editor`, and `tools/roster_ui_smoke.py --assets
 GAME/assets --output output/NEW_FOLDER`. These do not launch or control a game.
+
+For an automated packaged-editor check, set `QT_QPA_PLATFORM=offscreen` and run
+`CHoops-Recomp-Studio.exe --smoke --smoke-dialogs --assets GAME/assets --report
+report.json`. It constructs the new dialogs and decodes an indexed atlas without
+showing a desktop window, changing assets or launching a game.

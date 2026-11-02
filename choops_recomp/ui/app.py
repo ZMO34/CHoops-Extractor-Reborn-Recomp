@@ -573,13 +573,25 @@ class Studio(QMainWindow):
 
 
 def main(argv=None):
-    parser=argparse.ArgumentParser();parser.add_argument('--assets');parser.add_argument('--smoke',action='store_true');parser.add_argument('--report');args=parser.parse_args(argv)
+    parser=argparse.ArgumentParser();parser.add_argument('--assets');parser.add_argument('--smoke',action='store_true');parser.add_argument('--smoke-dialogs',action='store_true');parser.add_argument('--report');args=parser.parse_args(argv)
+    if args.smoke_dialogs and (not args.smoke or not args.assets or os.environ.get('QT_QPA_PLATFORM')!='offscreen'):parser.error('--smoke-dialogs requires --smoke, --assets and QT_QPA_PLATFORM=offscreen')
     app=QApplication.instance() or QApplication([]);app.setStyle('Fusion');window=Studio(offscreen=os.environ.get('QT_QPA_PLATFORM')=='offscreen');window.show()
     if args.assets:window.open_assets(args.assets)
     if args.smoke:
         def finish():
             if window.jobs:QTimer.singleShot(100,finish);return
             report=dict(window_title=window.windowTitle(),tabs=[window.tabs.tabText(i) for i in range(window.tabs.count())],workspace=window.workspace.report() if window.workspace else None,error=window.last_error)
+            if args.smoke_dialogs and not window.last_error:
+                try:
+                    from .relationships import RelationshipsDialog
+                    from .uniform_editor import UniformEditor
+                    relationships=RelationshipsDialog(window,window.roster);uniforms=UniformEditor(window,window.roster,window.workspace)
+                    report['relationships']=dict(fields=len(relationships.links),members=relationships.members.count());report['uniform_editor']=dict(routes=uniforms.routes.count(),artwork=uniforms.art.count(),players=uniforms.player.count())
+                    from ..uniform_fonts import atlas
+                    font=next(uniforms.art.itemData(i) for i in range(uniforms.art.count()) if uniforms.is_font(uniforms.art.itemData(i)));image=atlas(font.blocks());report['font_atlas']=list(image.size)
+                    relationships.close();uniforms.close()
+                except Exception as exc:window.last_error=str(exc)
+                report['error']=window.last_error
             if args.report:Path(args.report).write_text(json.dumps(report,indent=2))
             window.close();app.exit(1 if window.last_error else 0)
         QTimer.singleShot(250,finish)

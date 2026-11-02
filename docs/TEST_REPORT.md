@@ -90,3 +90,8 @@ expanded texture layouts and full feature parity are not certified by these test
   the vertical texture mirror and scalar-float binding issue are fixed.
 - Both new dialogs pass offscreen creation and layout inspection with the system
   font explicitly registered for the Windows offscreen plugin.
+
+- Final packaged executable passes `--smoke --smoke-dialogs`: installed catalog,
+  eight relationship fields, 13 school members, two uniform routes, nine artwork
+  choices and an indexed font decode; no startup error. Existing shoe and court
+  native GL checks also pass with the new glyph shader.

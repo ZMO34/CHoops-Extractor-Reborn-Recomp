@@ -48,9 +48,17 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 69 tests.
+not yet migrated the installed game. The current editor suite passes 73 tests.
 
 The complete paired corpus (40 pairs / 2,361 records) now passes private
 source-removal checks in both reader implementations. Installed migration and
 gameplay remain pending. Resource-file inspection is available in each library
 and the CLI, with bounded reads confined to a selected component.
+
+Batch WAV folders now support changed-track review and selective saving in the
+GUI and CLI. Inputs and destinations are rechecked before commit; write failures
+restore preceding edits. Recovery copies and a target manifest are retained if
+a concurrent edit prevents rollback. Process interruption is not certified as
+an atomic multi-track commit. Licensed and band/fight categories remain separate.
+Fresh direct imports materialize paired records and omit their obsolete combined
+payloads; existing-install migration retains backups by default.

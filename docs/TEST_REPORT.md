@@ -1,6 +1,6 @@
 # Test report
 
-- Core and Qt suite: **69 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **73 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -63,3 +63,9 @@ expanded texture layouts and full feature parity are not certified by these test
   and current grown loose-file sizes.
 - Latest packaged editor opens the installed assets with all four tabs, 3,378
   banks and no startup error; the game is not launched.
+
+- Batch PCM tests pass for selected-track application, unchanged export detection,
+  stale-review rejection, and restoration of both WAV and metadata after an
+  injected second-track disk failure. No packed assets or registry are written.
+- Fresh paired import omits obsolete metadata/data payloads after successful
+  component publication; repeat preparation still reads both components.

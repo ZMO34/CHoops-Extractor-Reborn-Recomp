@@ -69,3 +69,11 @@ def test_interrupted_pair_keeps_original_mapping_and_retry_commits(tmp_path,monk
     monkeypatch.setattr(converter,'publish',publish)
     assert converter.materialize_pair(tmp_path,*entries)==1
     assert all(not s['path'].endswith('/payload.dat') for s in folder.bank(entries[1])['segments'])
+
+
+def test_fresh_import_retains_only_loose_components(tmp_path,monkeypatch):
+    converter,_=modules(monkeypatch);entries,head,body=fixture(tmp_path)
+    assert converter.materialize(tmp_path,keep_originals=False)==1
+    assert all(not (tmp_path/e['folder']/'payload.dat').exists() for e in entries)
+    assert converter.materialize(tmp_path,keep_originals=False)==0
+    assert runtime_protocol.SourceReader(tmp_path).blocks(dict(bank=1,record=0))[1]==[b'CPU-DATA',b'GPU!']

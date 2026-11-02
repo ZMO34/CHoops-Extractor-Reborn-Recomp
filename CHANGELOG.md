@@ -19,3 +19,6 @@
 - Prototype paired-resource component materialization without source payload dependencies.
 
 - Validate all 40 paired banks without source payloads and add bounded resource inspection.
+
+- Add selective batch WAV import with source review and write-failure rollback.
+- Omit obsolete paired payloads from fresh direct imports after component extraction.

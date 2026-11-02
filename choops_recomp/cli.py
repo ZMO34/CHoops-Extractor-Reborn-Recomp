@@ -12,6 +12,9 @@ def main(argv=None):
     p=argparse.ArgumentParser(description='Xbox recomp assets-folder editor')
     p.add_argument('--assets',type=Path,required=True);sub=p.add_subparsers(dest='command',required=True)
     sub.add_parser('info')
+    for command in ('review-audio-folder','import-audio-folder'):
+        s=sub.add_parser(command);s.add_argument('folder',type=Path)
+        if command=='import-audio-folder':s.add_argument('--resources',help='Comma-separated reviewed resource keys; omitted applies all changed tracks')
     s=sub.add_parser('inspect-resource');s.add_argument('resource');s.add_argument('--component',type=int,default=0);s.add_argument('--offset',type=lambda value:int(value,0),default=0);s.add_argument('--length',type=int,default=4096)
     for command in ('export-wav','import-wav','export-dds','import-dds','import-artwork','scene-info'):
         s=sub.add_parser(command);s.add_argument('resource')
@@ -25,6 +28,14 @@ def main(argv=None):
         if command=='import-csv':s.add_argument('--fields',help='Comma-separated reviewed field keys; omitted applies all changed fields')
     args=p.parse_args(argv);w=Workspace(args.assets)
     if args.command=='info':print(json.dumps(w.report(),indent=2));return 0
+    if args.command in ('review-audio-folder','import-audio-folder'):
+        rows=audio.review_batch(w,args.folder)
+        if args.command=='review-audio-folder':print(json.dumps(rows,indent=2));return 0
+        if args.resources:
+            keys=set(args.resources.split(','));available={row['resource'] for row in rows}
+            if not keys<=available:raise ValueError('Requested audio resources are absent from changed-track review')
+            rows=[row for row in rows if row['resource'] in keys]
+        print(f'Saved {audio.apply_batch(w,args.folder,rows)} native WAV replacements');return 0
     if args.command in ('export-csv','compare-csv','import-csv'):
         from . import roster_csv
         resource=w.of_type('ROST')[0];model=Roster(resource.blocks()[0])

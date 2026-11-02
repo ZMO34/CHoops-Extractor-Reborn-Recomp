@@ -69,3 +69,10 @@ only the compatibility descriptor offsets and lengths are relocated. Exact
 shared extents retain one file, partial overlaps reject, and unclaimed gap/tail
 bytes are preserved. Synthetic and all 40 Xbox pairs pass source-removal checks; installed migration and runtime
 acceptance remain pending. No packed bank is generated.
+
+Batch native PCM uses source-bound WAV manifests and canonical PCM16 files.
+New export manifests include WAV SHA256 values to distinguish unchanged exports.
+Application stages each reviewed input, checks source/destination hashes, and
+rolls back preceding WAV/metadata writes on ordinary failures. It does not
+change XMA packets or rebuild a bank. Interrupted processes may leave a recovery
+manifest and backups; multi-track crash atomicity is not claimed.

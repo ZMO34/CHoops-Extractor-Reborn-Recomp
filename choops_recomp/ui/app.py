@@ -128,7 +128,7 @@ class Studio(QMainWindow):
         self.audio_details=QPlainTextEdit();self.audio_details.setReadOnly(True);self.pages['AUDO']['layout'].addWidget(self.audio_details)
         self.audio_cover=QLabel();self.audio_cover.setAlignment(Qt.AlignmentFlag.AlignCenter);self.audio_cover.setMaximumHeight(260);self.pages['AUDO']['layout'].addWidget(self.audio_cover);self.audio_cover_resource=None
         row=QHBoxLayout()
-        for text,slot in [('Play',self.play_audio),('Stop',self.stop_audio),('Export WAV…',self.export_audio),('Import WAV…',self.import_audio),('Export tab…',self.export_audio_tab)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
+        for text,slot in [('Play',self.play_audio),('Stop',self.stop_audio),('Export WAV…',self.export_audio),('Import WAV…',self.import_audio),('Export tab…',self.export_audio_tab),('Import folder…',self.import_audio_folder)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         self.pages['AUDO']['layout'].addLayout(row);row=QHBoxLayout()
         for text,slot in [('Export cover DDS…',self.export_audio_cover),('Replace cover DDS…',self.replace_audio_cover)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         self.pages['AUDO']['layout'].addLayout(row);self.pages['AUDO']['layout'].addWidget(QLabel('Native WAV keeps original channels, rate and duration. No console codec is required for import.'))
@@ -368,6 +368,23 @@ class Studio(QMainWindow):
         if not resources:return
         path,_=QFileDialog.getSaveFileName(self,'New audio export folder','audio-export')
         if path:self.run_job(lambda progress:audio.export_batch(resources,path,progress),lambda result:self.statusBar().showMessage(f'Exported {len(result)} WAV files and Xbox import manifest'))
+    def import_audio_folder(self):
+        workspace=self.workspace
+        if workspace is None:return
+        folder=QFileDialog.getExistingDirectory(self,'Review exported Xbox WAV folder')
+        if not folder:return
+        def review(rows):
+            if self.workspace is not workspace:return
+            if not rows:self.statusBar().showMessage('No WAV files changed from this export');return
+            dialog=QDialog(self);dialog.setWindowTitle('Review Xbox WAV replacements');dialog.resize(760,550);layout=QVBoxLayout(dialog);layout.addWidget(QLabel(f'{len(rows)} changed tracks. Select replacements to save directly to their resource folders.'))
+            scroll=QScrollArea();scroll.setWidgetResizable(True);content=QWidget();choices_layout=QVBoxLayout(content);choices=[]
+            for row in rows:
+                checkbox=QCheckBox(row['label']);checkbox.setChecked(True);checkbox.setToolTip(row['resource']);choices_layout.addWidget(checkbox);choices.append((row,checkbox))
+            scroll.setWidget(content);layout.addWidget(scroll);buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);layout.addWidget(buttons)
+            if dialog.exec()==QDialog.DialogCode.Accepted and self.workspace is workspace:
+                selected=[row for row,checkbox in choices if checkbox.isChecked()]
+                self.run_job(lambda progress:audio.apply_batch(workspace,folder,selected,progress),lambda count:self.statusBar().showMessage(f'Saved {count} native WAV replacements. Restart the recomp to apply.'))
+        self.run_job(lambda progress:audio.review_batch(workspace,folder),review)
     def stop_audio(self):
         if self.audio_player:self.audio_player.stop()
     def play_audio(self):

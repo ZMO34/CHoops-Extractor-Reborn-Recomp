@@ -91,8 +91,8 @@ def export_batch(resources,destination,progress=None):
         for i,resource in enumerate(resources):
             if progress:progress(i,len(resources),resource.label)
             filename=f'{i:05d}.wav';meta=export_wav(resource,scratch/filename)
-            rows.append(dict(resource=resource.key,file=filename,label=resource.label,source_identity=meta['source_identity'],channels=meta['channels'],sample_rate=meta['sample_rate'],samples=meta['samples']))
-        (scratch/'audio_manifest.json').write_text(json.dumps(dict(version=1,platform='xbox360',tracks=rows),indent=2)+'\n')
+            rows.append(dict(resource=resource.key,file=filename,label=resource.label,source_identity=meta['source_identity'],channels=meta['channels'],sample_rate=meta['sample_rate'],samples=meta['samples'],wav_sha256=sha((scratch/filename).read_bytes())))
+        (scratch/'audio_manifest.json').write_text(json.dumps(dict(version=1,platform='xbox360',tracks=rows),indent=2)+'\n',encoding='utf-8')
         scratch.rename(destination)
     except BaseException:
         if scratch.exists() and scratch.parent==destination.parent and scratch.name.startswith('.studio-audio-'):shutil.rmtree(scratch)
@@ -102,7 +102,7 @@ def export_batch(resources,destination,progress=None):
 
 def validate_batch(workspace,folder):
     """Review all source identities and PCM parameters before applying any track."""
-    folder=Path(folder).resolve();manifest=json.loads((folder/'audio_manifest.json').read_text())
+    folder=Path(folder).resolve();manifest=json.loads((folder/'audio_manifest.json').read_text(encoding='utf-8'))
     if manifest.get('version')!=1 or manifest.get('platform')!='xbox360':raise ValueError('An Xbox audio export manifest is required')
     result=[];seen=set()
     for row in manifest['tracks']:
@@ -116,3 +116,76 @@ def validate_batch(workspace,folder):
             if len(incoming.readframes(check['samples']))!=check['samples']*check['channels']*2:raise ValueError('Truncated batch PCM samples')
         result.append((resource,source))
     return result
+
+
+def review_batch(workspace,folder):
+    """Return changed WAVs only; retain support for older source-bound manifests."""
+    folder=Path(folder);pairs=validate_batch(workspace,folder);manifest=json.loads((folder/'audio_manifest.json').read_text(encoding='utf-8'))
+    rows={row['resource']:row for row in manifest['tracks']};result=[]
+    for resource,path in pairs:
+        checksum=sha(path.read_bytes())
+        if checksum==rows[resource.key].get('wav_sha256'):continue
+        targets=[]
+        for name in ('audio.wav','audio.json'):
+            target=resource.folder/name;targets.append(dict(name=name,sha256=sha(target.read_bytes()) if target.exists() else None))
+        result.append(dict(resource=resource.key,label=resource.label,file=str(path.resolve()),sha256=checksum,targets=targets))
+    return result
+
+
+def apply_batch(workspace,folder,reviewed,progress=None):
+    """Stage reviewed PCM files, then publish with rollback on write failure.
+
+    Only modern folder installs are supported. No packed data or registry is
+    modified. Recovery copies are retained if a concurrent edit prevents rollback.
+    """
+    import uuid
+    from types import SimpleNamespace
+    workspace.require('native_pcm')
+    if workspace.manifest.get('storage')!='loose-resources':raise ValueError('Batch PCM import requires the direct folder runtime')
+    fresh={row['resource']:row for row in review_batch(workspace,folder)};selected=[];seen=set()
+    for row in reviewed:
+        key=row['resource']
+        if key in seen:raise ValueError('Duplicate reviewed audio target')
+        seen.add(key)
+        if key not in fresh or fresh[key]!=row:raise ValueError('Audio source or destination changed since review; review again')
+        selected.append(row)
+    if not selected:return 0
+    root=workspace.root.resolve();scratch=root/('.studio-audio-'+uuid.uuid4().hex);scratch.mkdir();writes=[];published=[];retain=False
+    try:
+        for index,row in enumerate(selected):
+            resource=workspace.resource(row['resource']);stage=scratch/str(index);stage.mkdir()
+            source=Path(row['file'])
+            # Copy reviewed input first, then hash that exact immutable input.
+            incoming=stage/'incoming.wav';shutil.copyfile(source,incoming)
+            if sha(incoming.read_bytes())!=row['sha256']:raise ValueError('Audio input changed while staging; review again')
+            import_wav(SimpleNamespace(blocks=resource.blocks,record=resource.record,folder=stage),incoming)
+            for target_spec in row['targets']:
+                name=target_spec['name'];target=resource.folder/name
+                if not target.resolve().is_relative_to(workspace.assets):raise ValueError('Audio target escapes assets')
+                current=sha(target.read_bytes()) if target.exists() else None
+                if current!=target_spec['sha256']:raise ValueError('Audio destination changed while staging; review again')
+                backup=stage/(name+'.previous')
+                if target.exists():shutil.copyfile(target,backup)
+                writes.append(dict(target=target,source=stage/name,backup=backup,previous=current,new=sha((stage/name).read_bytes())))
+            if progress:progress(index,len(selected),resource.label)
+        recovery=[dict(target=item['target'].relative_to(root).as_posix(),previous=item['previous'],new=item['new'],backup=item['backup'].relative_to(scratch).as_posix(),replacement=item['source'].relative_to(scratch).as_posix()) for item in writes]
+        (scratch/'recovery.json').write_text(json.dumps(dict(version=1,platform='xbox360',files=recovery),indent=2),encoding='utf-8')
+        for item in writes:
+            target=item['target'];current=sha(target.read_bytes()) if target.exists() else None
+            if current!=item['previous']:raise ValueError('Audio destination changed before commit; review again')
+            target.parent.mkdir(parents=True,exist_ok=True);atomic_write(target,item['source'].read_bytes(),current);published.append(item)
+    except BaseException as failure:
+        errors=[]
+        for item in reversed(published):
+            try:
+                target=item['target']
+                if not target.is_file() or sha(target.read_bytes())!=item['new']:raise ValueError('Concurrent destination edit prevents rollback')
+                if item['previous'] is None:target.unlink()
+                else:atomic_write(target,item['backup'].read_bytes(),item['new'])
+            except (ValueError,OSError) as exc:errors.append(str(exc))
+        if errors:
+            retain=True;raise ValueError(f'Audio rollback requires recovery from {scratch}: '+ '; '.join(errors)) from failure
+        raise
+    finally:
+        if not retain and scratch.resolve().parent==root and scratch.name.startswith('.studio-audio-'):shutil.rmtree(scratch)
+    return len(selected)

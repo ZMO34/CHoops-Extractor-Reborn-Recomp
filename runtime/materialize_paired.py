@@ -68,7 +68,7 @@ def materialize_pair(root,entry,paired):
     return count
 
 
-def materialize(root):
+def materialize(root,keep_originals=True):
     root=Path(root).resolve();manifest=json.loads((root/'assets.json').read_text());entries={e['hash']:e for e in manifest['entries']};total=0
     if manifest.get('platform')!='xbox360' or manifest.get('storage')!='loose-resources':raise ValueError('Modern Xbox loose resources required')
     for entry in entries.values():
@@ -82,6 +82,17 @@ def materialize(root):
         if end+2>len(head):raise ValueError('Unterminated paired name')
         name=head[start:end].decode('utf-16-be');identity=zlib.crc32(name.upper().encode('ascii'))&0xffffffff
         total+=materialize_pair(root,entry,entries[identity])
+    if not keep_originals:
+        # Fresh imports only: remove exact obsolete payload files after all pairs
+        # commit. Never remove directories or source-disc data.
+        for entry in entries.values():
+            folder=contained(root,entry['folder']);layout=json.loads((folder/'asset.json').read_text())
+            if 'loose_segments' not in layout:continue
+            if 'paired_owner' in layout:
+                owner=contained(root,layout['paired_owner'])
+                if 'paired_resources' not in json.loads((owner/'asset.json').read_text()):raise ValueError('Incomplete paired owner commit')
+            backup=folder/'payload.dat'
+            if backup.is_file():backup.unlink()
     return total
 
 

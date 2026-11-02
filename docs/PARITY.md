@@ -27,7 +27,7 @@ writer, preservation test or integration requirement.
 | New uniforms and asset links | Private-copy addition/reopen/pixel identities and sorted virtual TOC tests passed | Gameplay acceptance, stadium/menu-logo independence |
 | Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing and DDS/image artwork controls implemented; runtime acceptance pending |
 | WAV export/import/preview | Implemented | Native loop/seek and duration parity, packaging acceptance |
-| Batch WAV | Export and import preflight implemented | Transactional batch apply and GUI review |
+| Batch WAV | Export, changed-track review, selective GUI/CLI apply and write-failure rollback implemented | Process-interruption recovery polish and gameplay acceptance |
 | Raw inspection/diagnostics | Bounded owning-resource hex inspection in GUI/CLI implemented | Richer structured diagnostics |
 | Change packages | Pending | Source-bound asset deltas without unchanged game bytes |
 | Documentation ecosystem | Established | Update evidence and acceptance records with each feature |

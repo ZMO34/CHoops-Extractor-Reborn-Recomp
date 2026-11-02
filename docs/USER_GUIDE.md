@@ -61,3 +61,11 @@ Select a resource and choose Inspect resource files to view its component bytes.
 Choose the component and a hexadecimal offset; each read displays up to 4 KiB
 without crossing the component boundary. Legacy paired source components may
 still be compressed; the inspector labels that representation explicitly.
+
+Audio: Export tab writes a source-bound WAV folder. Edit its WAVs, then use Import
+folder to review changed tracks and select which to save. Unchanged WAVs from
+new exports are skipped. Replacements retain original channels, rate and sample
+count. Save rechecks the reviewed files and destinations, then applies them to
+each owning folder. A write failure restores preceding changes; if a concurrent
+edit prevents restoration, recovery files and their target manifest are retained
+at the location reported by the editor.

@@ -55,12 +55,20 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 69 tests.
+not yet migrated the installed game. The current editor suite passes 73 tests.
 
 The complete paired corpus (40 pairs / 2,361 records) now passes private
 source-removal checks in both reader implementations. Installed migration and
 gameplay remain pending. Resource-file inspection is available in each library
 and the CLI, with bounded reads confined to a selected component.
+
+Batch WAV folders now support changed-track review and selective saving in the
+GUI and CLI. Inputs and destinations are rechecked before commit; write failures
+restore preceding edits. Recovery copies and a target manifest are retained if
+a concurrent edit prevents rollback. Process interruption is not certified as
+an atomic multi-track commit. Licensed and band/fight categories remain separate.
+Fresh direct imports materialize paired records and omit their obsolete combined
+payloads; existing-install migration retains backups by default.
 
 
 ---
@@ -94,7 +102,7 @@ writer, preservation test or integration requirement.
 | New uniforms and asset links | Private-copy addition/reopen/pixel identities and sorted virtual TOC tests passed | Gameplay acceptance, stadium/menu-logo independence |
 | Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing and DDS/image artwork controls implemented; runtime acceptance pending |
 | WAV export/import/preview | Implemented | Native loop/seek and duration parity, packaging acceptance |
-| Batch WAV | Export and import preflight implemented | Transactional batch apply and GUI review |
+| Batch WAV | Export, changed-track review, selective GUI/CLI apply and write-failure rollback implemented | Process-interruption recovery polish and gameplay acceptance |
 | Raw inspection/diagnostics | Bounded owning-resource hex inspection in GUI/CLI implemented | Richer structured diagnostics |
 | Change packages | Pending | Source-bound asset deltas without unchanged game bytes |
 | Documentation ecosystem | Established | Update evidence and acceptance records with each feature |
@@ -113,7 +121,7 @@ evidence before adoption; incomplete research is not silently marked obsolete.
 
 # Test report
 
-- Core and Qt suite: **69 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **73 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -176,3 +184,9 @@ expanded texture layouts and full feature parity are not certified by these test
   and current grown loose-file sizes.
 - Latest packaged editor opens the installed assets with all four tabs, 3,378
   banks and no startup error; the game is not launched.
+
+- Batch PCM tests pass for selected-track application, unchanged export detection,
+  stale-review rejection, and restoration of both WAV and metadata after an
+  injected second-track disk failure. No packed assets or registry are written.
+- Fresh paired import omits obsolete metadata/data payloads after successful
+  component publication; repeat preparation still reads both components.

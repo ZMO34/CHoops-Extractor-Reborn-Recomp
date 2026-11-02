@@ -8,7 +8,7 @@
   rows, ten independent/pixel-equivalent DDS identities including BC4/5 masks,
   original templates unchanged.
 - Fresh direct import has no `_archive`, packed `.stored` files or asset-cache
-  dependencies. Thirteen loose-loader tests pass, including compressed-source
+  dependencies. Fourteen loose-loader tests pass, including compressed-source
   migration with legacy storage deleted, direct edits and repeat-start stability.
 - Real SDK VFS checks pass over all 24 direct-resource virtual parts, including
   case-insensitive aliases, four concurrent readers, EOF and denied writes.
@@ -19,7 +19,7 @@
 - Standalone native PCM C++ executable passes endian, zero-tail, invalid codec,
   truncation, rate/extent and reset checks.
 - Recomp loose-assets and SDK integration subset: **12 passed**.
-- Broader owned recomp suite: **86 passed, 20 skipped**. All 13 loose-assets
+- Broader owned recomp suite: **87 passed, 20 skipped**. All 14 loose-assets
   tests, including fresh direct import and sorted virtual-TOC addition, pass. Broad default pytest discovery also
   entered unrelated third-party tools and failed on their missing Pillow;
   the owned suite was then explicitly scoped to `tests/`.

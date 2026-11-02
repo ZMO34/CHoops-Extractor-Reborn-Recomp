@@ -53,8 +53,20 @@ def _private_image(cpu,gpu,identity):
     remapping selectors. This prevents a clone's native DDS from affecting its
     source bank, whose original content identity must remain untouched.
     """
-    original=dds.xbox_dds(cpu,gpu);out=bytearray(original);fourcc=original[84:88];bpp=8 if fourcc==b'DXT1' else 16;token=int.from_bytes(hashlib.sha256(identity.encode()).digest(),'little');bits=0
-    for offset in range(128,len(out),bpp):
+    original=dds.xbox_dds(cpu,gpu);out=bytearray(original);fourcc=original[84:88];bpp=next(size for code,size in dds.FORMATS.values() if code==fourcc);token=int.from_bytes(hashlib.sha256(identity.encode()).digest(),'little')|1;bits=0
+    for offset in range(128,len(out),8 if fourcc in (b'ATI1',b'ATI2') else bpp):
+        if fourcc in (b'ATI1',b'ATI2'):
+            selectors=int.from_bytes(out[offset+2:offset+8],'little');codes=[selectors>>(3*i)&7 for i in range(16)];equal=out[offset]==out[offset+1]
+            eligible=[i for i,code in enumerate(codes) if code in (0,1)]
+            if not eligible or not equal and len(eligible)!=16:continue
+            if token>>bits&1:
+                if equal:selectors^=1<<(3*eligible[0])
+                else:
+                    out[offset],out[offset+1]=out[offset+1],out[offset];selectors^=sum(1<<(3*i) for i in range(16))
+                out[offset+2:offset+8]=selectors.to_bytes(6,'little')
+            bits+=1
+            if bits==64:break
+            continue
         color=offset+(0 if bpp==8 else 8);selectors=int.from_bytes(out[color+4:color+8],'little')
         if bpp==8 and selectors&0xaaaaaaaa:continue
         if token>>bits&1:
@@ -78,6 +90,8 @@ def _private_image(cpu,gpu,identity):
 
 
 def create(workspace,model,roster_resource,team,variant,asset,template_index=None):
+    workspace.require('added_asset_banks')
+    workspace.require('direct_resources')
     if variant not in (2,3,4):raise ValueError('New uniforms use Alternate 1/2/3 slots; existing Home/Away are retained')
     if not 0<=team<len(model.rows['teams']):raise ValueError('Invalid Xbox team')
     owner=struct.unpack_from('>H',model.data,model.rows['teams'][team]['offset']+0x190)[0]
@@ -88,21 +102,22 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
     template=rows(model)[template_index];updated=append(model,template_index,owner,asset,variant)
     roster_path=roster_resource.component_path()
     if sha(roster_path.read_bytes())!=sha(model.original):raise ValueError('Roster changed on disk; reopen before creating uniforms')
-    marker=workspace.root/'asset_edits.json';before=marker.read_bytes() if marker.exists() else None
-    registry=json.loads(before) if before else dict(version=1,platform='xbox360',edits=[],banks=[])
-    registry.setdefault('banks',[]);registry.setdefault('edits',[]);plans=[];created=[];temporary=[]
+    if workspace.manifest.get('storage')!='loose-resources':raise ValueError('Finish the direct-folder migration before adding assets')
+    plans=[];created=[];temporary=[]
     try:
         for selection in (False,True):
             source_name=name(template['asset'],template['variant'],selection);target_name=name(asset,variant,selection)
             source_hash=zlib.crc32(source_name.upper().encode())&0xffffffff;target_hash=zlib.crc32(target_name.upper().encode())&0xffffffff
-            if target_hash in workspace.by_hash or any(s['name']==target_name for s in registry['banks']):raise ValueError('Uniform or selection asset already exists: '+target_name)
+            if target_hash in workspace.by_hash:raise ValueError('Uniform or selection asset already exists: '+target_name)
             if source_hash not in workspace.by_hash:raise ValueError('Required Xbox template is missing: '+source_name)
             entry,layout=workspace.by_hash[source_hash];source=workspace.safe(entry['folder']);target=workspace.assets/target_name
-            if entry.get('added'):raise ValueError('Choose an original Xbox uniform template; cloning a newly added bank is not yet supported')
             if target.exists():raise ValueError('New asset folder already exists')
-            temp=workspace.assets/('.studio-uniform-'+uuid.uuid4().hex);temporary.append(temp);shutil.copytree(source,temp)
+            temp=workspace.assets/('.studio-uniform-'+uuid.uuid4().hex);temporary.append(temp);shutil.copytree(source,temp,ignore=shutil.ignore_patterns('*.stored'))
             if not layout.get('blocks'):raise ValueError('New uniform requires a standard Xbox template')
             cloned=copy.deepcopy(layout);cloned['textures']=[]
+            flags=entry.get('toc_flags',workspace.manifest['loader_metadata']['toc_flags'].get(str(entry.get('template_hash',source_hash))))
+            if flags is None:raise ValueError('Missing Xbox loader metadata for template')
+            cloned['identity']=dict(name=target_name,hash=target_hash,source_size=entry['size'],toc_flags=flags,template_hash=source_hash)
             seen_components=set()
             for record in cloned['records']:
                 if record['type']!=0x5c369069:continue
@@ -112,6 +127,8 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
                     components.append(next(c for c in cloned['blocks'][j]['components'] if c['start']==start))
                 if not components or len(components)>2:continue
                 cpu=(temp/components[0]['path']).read_bytes();gpu=(temp/components[1]['path']).read_bytes() if len(components)==2 else None
+                try:source_image=dds.xbox_dds((source/components[0]['path']).read_bytes(),(source/components[1]['path']).read_bytes() if len(components)==2 else None)
+                except ValueError:continue
                 component=components[1] if gpu is not None else components[0];key=component['path']
                 if key not in seen_components:
                     try:dds.xbox_dds(cpu,gpu)
@@ -124,17 +141,16 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
                 else:
                     original=dds.xbox_dds(cpu,gpu)
                 relative=record['folder']+'/texture.dds';image=temp/relative
-                if not image.exists():image.parent.mkdir(parents=True,exist_ok=True);image.write_bytes(original)
-                registry['edits'].append(dict(kind='dds',source=dict(bank=target_hash,record=record['index']),file='assets/'+target_name+'/'+relative))
+                current_cpu=(temp/components[0]['path']).read_bytes();current_gpu=(temp/components[1]['path']).read_bytes() if len(components)==2 else None
+                private_image=dds.xbox_dds(current_cpu,current_gpu)
+                if not image.exists() or image.read_bytes()==source_image:
+                    image.parent.mkdir(parents=True,exist_ok=True);image.write_bytes(private_image)
+                info=dds.info(private_image);fmt=next(fmt for fmt,(code,size) in dds.FORMATS.items() if code==private_image[84:88])
+                cloned['textures'].append(dict(path=relative,record=record['index'],sha256=sha(private_image),identity=dds.fnv64(private_image[128:]),descriptor=dict(width=info['width'],height=info['height'],format=fmt)))
             (temp/'asset.json').write_text(json.dumps(cloned,indent=2)+'\n')
-            registry['banks'].append(dict(name=target_name,folder='assets/'+target_name,template=source_hash));plans.append((temp,target))
+            plans.append((temp,target))
         for temp,target in plans:temp.rename(target);created.append(target)
-        encoded=(json.dumps(registry,indent=2)+'\n').encode();atomic_write(marker,encoded,sha(before) if before is not None else None)
-        try:atomic_write(roster_path,updated,sha(model.original))
-        except Exception:
-            if before is None:marker.unlink()
-            else:atomic_write(marker,before,sha(encoded))
-            raise
+        atomic_write(roster_path,updated,sha(model.original))
         model._commit(updated);model.original=updated
         return dict(asset=asset,variant=variant,owner=owner,folders=[str(p.name) for p in created],uniform_rows=len(rows(model)))
     except Exception:

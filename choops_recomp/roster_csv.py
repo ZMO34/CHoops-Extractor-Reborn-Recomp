@@ -31,8 +31,8 @@ def export(model,table,destination):
 def review(model,source):
     source=Path(source);metadata=json.loads(source.with_suffix(source.suffix+'.json').read_text());table=metadata.get('table')
     if metadata.get('version')!=1 or metadata.get('platform')!='xbox360' or metadata.get('source_sha256')!=sha(model.original):raise ValueError('CSV belongs to a different Xbox source roster')
-    columns=fields(table)
-    if metadata.get('fields')!=columns:raise ValueError('CSV field profile mismatch')
+    columns=metadata.get('fields',[])
+    if not columns or len(set(columns))!=len(columns) or not set(columns)<=set(fields(table)):raise ValueError('CSV field profile mismatch')
     changes=[];seen=set()
     with source.open(encoding='utf-8-sig',newline='') as stream:
         reader=csv.DictReader(stream)

@@ -35,3 +35,12 @@ def group(resources):
     result={name:[] for name in CATEGORIES}
     for resource in resources:result[category(resource)].append(resource)
     return result
+
+
+def cover_resource(resource):
+    row=metadata(resource)
+    if not row.get('cover_record'):return None,0
+    from .uniform_preview import unique
+    cover=unique(resource.workspace,'jukebox.iff','TXTR',row['cover_record'])
+    shared=sum(track.get('cover_record')==row['cover_record'] for track in tracks().values())
+    return cover,shared

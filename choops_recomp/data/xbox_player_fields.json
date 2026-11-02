@@ -14,7 +14,11 @@
       "maximum": 1,
       "getter": "84842408",
       "setter": "84842418",
-      "text_id": "0b3aac31"
+      "text_id": "0b3aac31",
+      "choices": {
+        "0": "Left",
+        "1": "Right"
+      }
     },
     {
       "key": "weight_lbs",
@@ -40,7 +44,14 @@
       "maximum": 4,
       "getter": "848421e8",
       "setter": "848421f8",
-      "text_id": "732ca9ed"
+      "text_id": "732ca9ed",
+      "choices": {
+        "0": "Skinny",
+        "1": "Thin",
+        "2": "Normal",
+        "3": "Muscles",
+        "4": "Thick"
+      }
     },
     {
       "key": "muscle_tone_code",
@@ -53,7 +64,11 @@
       "maximum": 1,
       "getter": "848421c8",
       "setter": "848421d8",
-      "text_id": "01f37513"
+      "text_id": "01f37513",
+      "choices": {
+        "0": "Buff",
+        "1": "Ripped"
+      }
     },
     {
       "key": "appearance_color_code",
@@ -66,7 +81,15 @@
       "maximum": 5,
       "getter": "84842188",
       "setter": "84842198",
-      "text_id": "298c9b35"
+      "text_id": "298c9b35",
+      "choices": {
+        "0": "Darkest",
+        "1": "Darker",
+        "2": "Dark",
+        "3": "Light",
+        "4": "Lighter",
+        "5": "Lightest"
+      }
     },
     {
       "key": "eye_color_code",
@@ -79,7 +102,13 @@
       "maximum": 3,
       "getter": "84842268",
       "setter": "84842278",
-      "text_id": "55e441ff"
+      "text_id": "55e441ff",
+      "choices": {
+        "0": "Blue",
+        "1": "Brown",
+        "2": "Green",
+        "3": "Hazel"
+      }
     },
     {
       "key": "headband_code",
@@ -92,7 +121,11 @@
       "maximum": 1,
       "getter": "84842368",
       "setter": "84842378",
-      "text_id": "07d5650f"
+      "text_id": "07d5650f",
+      "choices": {
+        "0": "None",
+        "1": "Headband"
+      }
     },
     {
       "key": "left_arm_band_code",
@@ -105,7 +138,22 @@
       "maximum": 12,
       "getter": "84842088",
       "setter": "84842098",
-      "text_id": "2605a2a3"
+      "text_id": "2605a2a3",
+      "choices": {
+        "0": "None",
+        "1": "Wht Upper Arm",
+        "2": "Blk Upper Arm",
+        "3": "Team Upper Arm",
+        "4": "2nd Team Upper Arm",
+        "5": "Wht Lower Arm",
+        "6": "Blk Lower Arm",
+        "7": "Team Lower Arm",
+        "8": "2nd Team Lower Arm",
+        "9": "Wht Sleeve",
+        "10": "Blk Sleeve",
+        "11": "Team Sleeve",
+        "12": "2nd Team Sleeve"
+      }
     },
     {
       "key": "right_arm_band_code",
@@ -118,7 +166,22 @@
       "maximum": 12,
       "getter": "848420a8",
       "setter": "848420b8",
-      "text_id": "daed7763"
+      "text_id": "daed7763",
+      "choices": {
+        "0": "None",
+        "1": "Wht Upper Arm",
+        "2": "Blk Upper Arm",
+        "3": "Team Upper Arm",
+        "4": "2nd Team Upper Arm",
+        "5": "Wht Lower Arm",
+        "6": "Blk Lower Arm",
+        "7": "Team Lower Arm",
+        "8": "2nd Team Lower Arm",
+        "9": "Wht Sleeve",
+        "10": "Blk Sleeve",
+        "11": "Team Sleeve",
+        "12": "2nd Team Sleeve"
+      }
     },
     {
       "key": "left_elbow_pad_code",
@@ -131,7 +194,22 @@
       "maximum": 12,
       "getter": "84842048",
       "setter": "84842058",
-      "text_id": "f58a7115"
+      "text_id": "f58a7115",
+      "choices": {
+        "0": "None",
+        "1": "White Pad",
+        "2": "Black Pad",
+        "3": "Team Pad",
+        "4": "2nd Team Pad",
+        "5": "White Sleeve",
+        "6": "Black Sleeve",
+        "7": "Team Sleeve",
+        "8": "2nd Team Sleeve",
+        "9": "White Band",
+        "10": "Black Band",
+        "11": "Team Band",
+        "12": "2nd Team Band"
+      }
     },
     {
       "key": "right_elbow_pad_code",
@@ -144,7 +222,22 @@
       "maximum": 12,
       "getter": "84842068",
       "setter": "84842078",
-      "text_id": "6e125b71"
+      "text_id": "6e125b71",
+      "choices": {
+        "0": "None",
+        "1": "White Pad",
+        "2": "Black Pad",
+        "3": "Team Pad",
+        "4": "2nd Team Pad",
+        "5": "White Sleeve",
+        "6": "Black Sleeve",
+        "7": "Team Sleeve",
+        "8": "2nd Team Sleeve",
+        "9": "White Band",
+        "10": "Black Band",
+        "11": "Team Band",
+        "12": "2nd Team Band"
+      }
     },
     {
       "key": "left_wrist_band_code",
@@ -157,7 +250,26 @@
       "maximum": 16,
       "getter": "848420c8",
       "setter": "848420d8",
-      "text_id": "4f7ab89b"
+      "text_id": "4f7ab89b",
+      "choices": {
+        "0": "None",
+        "1": "Wht Forearm Band",
+        "2": "Blk Forearm Band",
+        "3": "Team Forearm Band",
+        "4": "2nd Team Forearm Band",
+        "5": "Wht Wrist Band",
+        "6": "Blk Wrist Band",
+        "7": "Team Wrist Band",
+        "8": "2nd Team Wrist Band",
+        "9": "Wht Dbl Wrist Band",
+        "10": "Blk Dbl Wrist Band",
+        "11": "Team Dbl Wrist Band",
+        "12": "2nd Team Dbl Wrist Band",
+        "13": "Wht Rubber Band",
+        "14": "Blk Rubber Band",
+        "15": "Team Rubber Band",
+        "16": "2nd Team Rubber Band"
+      }
     },
     {
       "key": "right_wrist_band_code",
@@ -170,7 +282,26 @@
       "maximum": 16,
       "getter": "848420e8",
       "setter": "848420f8",
-      "text_id": "7239b567"
+      "text_id": "7239b567",
+      "choices": {
+        "0": "None",
+        "1": "Wht Forearm Band",
+        "2": "Blk Forearm Band",
+        "3": "Team Forearm Band",
+        "4": "2nd Team Forearm Band",
+        "5": "Wht Wrist Band",
+        "6": "Blk Wrist Band",
+        "7": "Team Wrist Band",
+        "8": "2nd Team Wrist Band",
+        "9": "Wht Dbl Wrist Band",
+        "10": "Blk Dbl Wrist Band",
+        "11": "Team Dbl Wrist Band",
+        "12": "2nd Team Dbl Wrist Band",
+        "13": "Wht Rubber Band",
+        "14": "Blk Rubber Band",
+        "15": "Team Rubber Band",
+        "16": "2nd Team Rubber Band"
+      }
     },
     {
       "key": "left_knee_pad_code",
@@ -183,7 +314,30 @@
       "maximum": 20,
       "getter": "84842108",
       "setter": "84842118",
-      "text_id": "2dab5cdf"
+      "text_id": "2dab5cdf",
+      "choices": {
+        "0": "None",
+        "1": "White Pad",
+        "2": "Black Pad",
+        "3": "Team Pad",
+        "4": "2nd Team Pad",
+        "5": "White Brace",
+        "6": "Black Brace",
+        "7": "Team Brace",
+        "8": "2nd Team Brace",
+        "9": "White Sleeve",
+        "10": "Black Sleeve",
+        "11": "Team Sleeve",
+        "12": "2nd Team Sleeve",
+        "13": "White Strap",
+        "14": "Black Strap",
+        "15": "Team Strap",
+        "16": "2nd Team Strap",
+        "17": "White Calf Sleeve",
+        "18": "Black Calf Sleeve",
+        "19": "Team Calf Sleeve",
+        "20": "2nd Team Calf Sleeve"
+      }
     },
     {
       "key": "right_knee_pad_code",
@@ -196,7 +350,30 @@
       "maximum": 20,
       "getter": "84842128",
       "setter": "84842138",
-      "text_id": "d143891f"
+      "text_id": "d143891f",
+      "choices": {
+        "0": "None",
+        "1": "White Pad",
+        "2": "Black Pad",
+        "3": "Team Pad",
+        "4": "2nd Team Pad",
+        "5": "White Brace",
+        "6": "Black Brace",
+        "7": "Team Brace",
+        "8": "2nd Team Brace",
+        "9": "White Sleeve",
+        "10": "Black Sleeve",
+        "11": "Team Sleeve",
+        "12": "2nd Team Sleeve",
+        "13": "White Strap",
+        "14": "Black Strap",
+        "15": "Team Strap",
+        "16": "2nd Team Strap",
+        "17": "White Calf Sleeve",
+        "18": "Black Calf Sleeve",
+        "19": "Team Calf Sleeve",
+        "20": "2nd Team Calf Sleeve"
+      }
     },
     {
       "key": "sock_length_code",
@@ -209,7 +386,13 @@
       "maximum": 3,
       "getter": "84842388",
       "setter": "84842398",
-      "text_id": "40296347"
+      "text_id": "40296347",
+      "choices": {
+        "0": "Ankle Socks",
+        "1": "Short",
+        "2": "Medium",
+        "3": "Long"
+      }
     },
     {
       "key": "home_sock_color_code",
@@ -222,7 +405,11 @@
       "maximum": 1,
       "getter": "848423a8",
       "setter": "848423b8",
-      "text_id": "eff79ff7"
+      "text_id": "eff79ff7",
+      "choices": {
+        "0": "Black",
+        "1": "White"
+      }
     },
     {
       "key": "away_sock_color_code",
@@ -235,7 +422,11 @@
       "maximum": 1,
       "getter": "848423c8",
       "setter": "848423d8",
-      "text_id": "28c908cb"
+      "text_id": "28c908cb",
+      "choices": {
+        "0": "Black",
+        "1": "White"
+      }
     },
     {
       "key": "t-shirt_code",
@@ -248,7 +439,12 @@
       "maximum": 2,
       "getter": "84842308",
       "setter": "84842318",
-      "text_id": "2958fbc3"
+      "text_id": "2958fbc3",
+      "choices": {
+        "0": "None",
+        "1": "Short Sleeve",
+        "2": "Long Sleeve"
+      }
     },
     {
       "key": "confidence_code",
@@ -275,6 +471,347 @@
       "getter": "847528e8",
       "setter": "84841f10",
       "text_id": "8040a689"
+    },
+    {
+      "key": "left_biceps_code",
+      "name": "Left Biceps",
+      "offset": 132,
+      "size": 4,
+      "shift": 1,
+      "bits": 4,
+      "minimum": 0,
+      "maximum": 12,
+      "getter": "84841fc8",
+      "setter": "84841fd8",
+      "text_id": "099387d1",
+      "choices": {
+        "0": "None",
+        "1": "Tattoo 1",
+        "2": "Tattoo 2",
+        "3": "Tattoo 3",
+        "4": "Tattoo 4",
+        "5": "Tattoo 5",
+        "6": "Tattoo 6",
+        "7": "Tattoo 7",
+        "8": "Tattoo 8",
+        "9": "Tattoo 9",
+        "10": "Tattoo 10",
+        "11": "Tattoo 11",
+        "12": "Tattoo 12"
+      }
+    },
+    {
+      "key": "post_code",
+      "name": "Post",
+      "offset": 132,
+      "size": 4,
+      "shift": 13,
+      "bits": 5,
+      "minimum": 0,
+      "maximum": 7,
+      "getter": "84841f68",
+      "setter": "84841f78",
+      "text_id": "254b0d95",
+      "choices": {
+        "0": "Shooter",
+        "1": "Guard",
+        "2": "Forward",
+        "3": "Clutch",
+        "4": "Finesse",
+        "5": "High Hands",
+        "6": "Power",
+        "7": "Strong"
+      }
+    },
+    {
+      "key": "hair_color_code",
+      "name": "Hair Color",
+      "offset": 144,
+      "size": 4,
+      "shift": 2,
+      "bits": 3,
+      "minimum": 0,
+      "maximum": 4,
+      "getter": "848422e8",
+      "setter": "848422f8",
+      "text_id": "2d6712a1",
+      "choices": {
+        "0": "Black",
+        "1": "Brown",
+        "2": "Light Brown",
+        "3": "Blond",
+        "4": "Red"
+      }
+    },
+    {
+      "key": "left_shoulder_code",
+      "name": "Left Shoulder",
+      "offset": 132,
+      "size": 4,
+      "shift": 9,
+      "bits": 4,
+      "minimum": 0,
+      "maximum": 12,
+      "getter": "84841f88",
+      "setter": "84841f98",
+      "text_id": "629c7945",
+      "choices": {
+        "0": "None",
+        "1": "Tattoo 1",
+        "2": "Tattoo 2",
+        "3": "Tattoo 3",
+        "4": "Tattoo 4",
+        "5": "Tattoo 5",
+        "6": "Tattoo 6",
+        "7": "Tattoo 7",
+        "8": "Tattoo 8",
+        "9": "Tattoo 9",
+        "10": "Tattoo 10",
+        "11": "Tattoo 11",
+        "12": "Tattoo 12"
+      }
+    },
+    {
+      "key": "hairstyle_code",
+      "name": "Hairstyle",
+      "offset": 144,
+      "size": 4,
+      "shift": 26,
+      "bits": 6,
+      "minimum": 0,
+      "maximum": 36,
+      "getter": "848421a8",
+      "setter": "848421b8",
+      "text_id": "64b49a0b",
+      "choices": {
+        "0": "Frizzy Afro",
+        "1": "Largest Afro",
+        "2": "Large Afro",
+        "3": "Pony Tail",
+        "4": "Pony Tail Dreads",
+        "5": "Pulled Dreads",
+        "6": "Short Twist",
+        "7": "Long Braids",
+        "8": "Small Afro",
+        "9": "Crop",
+        "10": "Crew",
+        "11": "Thin Crew",
+        "12": "Floppy",
+        "13": "Medium Bangs",
+        "14": "High Medium Bangs",
+        "15": "Short Forward",
+        "16": "Mid West",
+        "17": "Fade",
+        "18": "Side Part",
+        "19": "Over Ears",
+        "20": "Curly",
+        "21": "Thick Crop",
+        "22": "Short Bangs",
+        "23": "Prep",
+        "24": "Spike",
+        "25": "Slick Back",
+        "26": "Long Bangs",
+        "27": "Long Twist",
+        "28": "Medium Braids",
+        "29": "Long Dreads",
+        "30": "Receding",
+        "31": "Bowl",
+        "32": "Short Braids",
+        "33": "Medium Afro",
+        "34": "Shaved",
+        "35": "70's",
+        "36": "Bald"
+      }
+    },
+    {
+      "key": "freethrow_code",
+      "name": "Freethrow",
+      "offset": 132,
+      "size": 4,
+      "shift": 18,
+      "bits": 6,
+      "minimum": 0,
+      "maximum": 21,
+      "getter": "84841f48",
+      "setter": "84841f58",
+      "text_id": "73b06589",
+      "choices": {
+        "0": "Freethrow 1",
+        "1": "Freethrow 2",
+        "2": "Freethrow 3",
+        "3": "Freethrow 4",
+        "4": "Freethrow 5",
+        "5": "Freethrow 6",
+        "6": "Freethrow 7",
+        "7": "Freethrow 8",
+        "8": "Freethrow 9",
+        "9": "Freethrow 10",
+        "10": "Freethrow 11",
+        "11": "Freethrow 12",
+        "12": "Freethrow 13",
+        "13": "Freethrow 14",
+        "14": "Freethrow 15",
+        "15": "Freethrow 17",
+        "16": "Freethrow 18",
+        "17": "Freethrow 19",
+        "18": "Freethrow 20",
+        "19": "Freethrow 21",
+        "20": "Freethrow 22",
+        "21": "Freethrow 23"
+      }
+    },
+    {
+      "key": "sideburns_code",
+      "name": "Sideburns",
+      "offset": 144,
+      "size": 4,
+      "shift": 5,
+      "bits": 2,
+      "minimum": 0,
+      "maximum": 3,
+      "getter": "848422c8",
+      "setter": "848422d8",
+      "text_id": "794b3c79",
+      "choices": {
+        "0": "None",
+        "1": "Sideburns 1",
+        "2": "Sideburns 2",
+        "3": "Sideburns 3"
+      }
+    },
+    {
+      "key": "right_biceps_code",
+      "name": "Right Biceps",
+      "offset": 136,
+      "size": 4,
+      "shift": 28,
+      "bits": 4,
+      "minimum": 0,
+      "maximum": 12,
+      "getter": "84841fe8",
+      "setter": "84841ff8",
+      "text_id": "8a2fe6e1",
+      "choices": {
+        "0": "None",
+        "1": "Tattoo 1",
+        "2": "Tattoo 2",
+        "3": "Tattoo 3",
+        "4": "Tattoo 4",
+        "5": "Tattoo 5",
+        "6": "Tattoo 6",
+        "7": "Tattoo 7",
+        "8": "Tattoo 8",
+        "9": "Tattoo 9",
+        "10": "Tattoo 10",
+        "11": "Tattoo 11",
+        "12": "Tattoo 12"
+      }
+    },
+    {
+      "key": "left_forearm_code",
+      "name": "Left Forearm",
+      "offset": 136,
+      "size": 4,
+      "shift": 24,
+      "bits": 4,
+      "minimum": 0,
+      "maximum": 12,
+      "getter": "84842008",
+      "setter": "84842018",
+      "text_id": "9cc4ccaf",
+      "choices": {
+        "0": "None",
+        "1": "Tattoo 1",
+        "2": "Tattoo 2",
+        "3": "Tattoo 3",
+        "4": "Tattoo 4",
+        "5": "Tattoo 5",
+        "6": "Tattoo 6",
+        "7": "Tattoo 7",
+        "8": "Tattoo 8",
+        "9": "Tattoo 9",
+        "10": "Tattoo 10",
+        "11": "Tattoo 11",
+        "12": "Tattoo 12"
+      }
+    },
+    {
+      "key": "right_shoulder_code",
+      "name": "Right Shoulder",
+      "offset": 132,
+      "size": 4,
+      "shift": 5,
+      "bits": 4,
+      "minimum": 0,
+      "maximum": 12,
+      "getter": "84841fa8",
+      "setter": "84841fb8",
+      "text_id": "9e74ac85",
+      "choices": {
+        "0": "None",
+        "1": "Tattoo 1",
+        "2": "Tattoo 2",
+        "3": "Tattoo 3",
+        "4": "Tattoo 4",
+        "5": "Tattoo 5",
+        "6": "Tattoo 6",
+        "7": "Tattoo 7",
+        "8": "Tattoo 8",
+        "9": "Tattoo 9",
+        "10": "Tattoo 10",
+        "11": "Tattoo 11",
+        "12": "Tattoo 12"
+      }
+    },
+    {
+      "key": "beard_style_code",
+      "name": "Beard Style",
+      "offset": 144,
+      "size": 4,
+      "shift": 10,
+      "bits": 3,
+      "minimum": 0,
+      "maximum": 6,
+      "getter": "84842288",
+      "setter": "84842298",
+      "text_id": "c70c44e7",
+      "choices": {
+        "0": "None",
+        "1": "Beard Style 1",
+        "2": "Beard Style 2",
+        "3": "Beard Style 3",
+        "4": "Beard Style 4",
+        "5": "Beard Style 5",
+        "6": "Beard Style 6"
+      }
+    },
+    {
+      "key": "right_forearm_code",
+      "name": "Right Forearm",
+      "offset": 136,
+      "size": 4,
+      "shift": 20,
+      "bits": 4,
+      "minimum": 0,
+      "maximum": 12,
+      "getter": "84842028",
+      "setter": "84842038",
+      "text_id": "cd9970f5",
+      "choices": {
+        "0": "None",
+        "1": "Tattoo 1",
+        "2": "Tattoo 2",
+        "3": "Tattoo 3",
+        "4": "Tattoo 4",
+        "5": "Tattoo 5",
+        "6": "Tattoo 6",
+        "7": "Tattoo 7",
+        "8": "Tattoo 8",
+        "9": "Tattoo 9",
+        "10": "Tattoo 10",
+        "11": "Tattoo 11",
+        "12": "Tattoo 12"
+      }
     }
   ],
   "ratings": [

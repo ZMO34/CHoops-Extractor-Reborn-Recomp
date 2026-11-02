@@ -73,6 +73,13 @@ def test_scene_transform_preserves_uv_rgba():
     assert scene.transform(vertices,matrix)==[(11,22,33,.5,.25,1,0,0,1)]
 
 
+def test_xenos_packed_signed_extremes_and_channel_order():
+    # x=+511, y=-512, z=-1, w=+1 in the native low-to-high layout.
+    word=511|(512<<10)|(1023<<20)|(1<<30)
+    assert scene.packed_components(word,7)==(1.,-1.,-1/511,1.)
+    assert scene.packed_components(1023|(2047<<10)|(2047<<21),17,False)==(1.,1.,1.)
+
+
 def test_instance_table_rejects_nonhomogeneous_matrix():
     data=bytearray(256);struct.pack_into('>II',data,0x3c,1,0x80-0x40+1)
     with pytest.raises(ValueError,match='instance'):scene.instances(Binary(data))
@@ -130,3 +137,13 @@ def test_csv_selective_review_and_single_undo(tmp_path):
     assert model.rows['players'][0]['weight_lbs']==0
     assert len(model.history)==1
     model.undo();assert model.data==bytearray(roster_bytes())
+
+
+def test_missing_runtime_capabilities_allow_only_legacy_dds():
+    from choops_recomp.workspace import Workspace
+    workspace=Workspace.__new__(Workspace);workspace.capabilities={}
+    workspace.require('native_dds_formats',18)
+    with pytest.raises(ValueError,match='Update'):workspace.require('native_dds_formats',59)
+    with pytest.raises(ValueError,match='Update'):workspace.require('native_pcm')
+    workspace.capabilities={'native_dds_formats':[18,19,20,49,59],'native_pcm':True}
+    workspace.require('native_dds_formats',59);workspace.require('native_pcm')

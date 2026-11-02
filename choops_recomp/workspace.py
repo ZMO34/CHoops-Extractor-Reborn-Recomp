@@ -41,18 +41,28 @@ class Resource:
     @property
     def folder(self):return self.workspace.safe(self.entry['folder']+'/'+self.record['folder'])
     @property
-    def label(self):return f"{self.bank} / {self.record['id']:08x}"
+    def label(self):
+        from .identities import RECORD_LABELS
+        bank=self.workspace.labels.get(self.entry['hash'],self.bank);record=RECORD_LABELS.get(self.record['id'],f"{self.record['id']:08x}")
+        return f"{bank} / {record}"
     def blocks(self):
         result=[]
         for c in self.components:
-            if 'file' in c:
+            if 'folder' in c:
+                data=self.workspace.safe(c['folder']+'/'+c['path']).read_bytes() if c['path'] else b''
+                if len(data)!=c['size']:raise ValueError('Loose paired component extent changed')
+                result.append(data)
+            elif 'file' in c:
                 with self.workspace.safe(c['file']).open('rb') as stream:
                     stream.seek(c['offset']);data=stream.read(c['size'])
                 if len(data)!=c['size']:raise ValueError('Paired resource changed or was truncated')
-                result.append(data)
+                from .runtime_protocol import decode_component
+                result.append(decode_component(data))
             else:result.append(self.workspace.safe(self.entry['folder']+'/'+c['path']).read_bytes())
         return result
-    def component_path(self,index=0):return self.workspace.safe(self.entry['folder']+'/'+self.components[index]['path'])
+    def component_path(self,index=0):
+        c=self.components[index]
+        return self.workspace.safe(c.get('folder',self.entry['folder'])+'/'+c['path'])
 
 
 class StreamResource(Resource):
@@ -79,12 +89,15 @@ class Workspace:
         assets=Path(assets).resolve()
         if assets.name.casefold()!='assets':raise ValueError('Open the installed game assets folder, not a disc or individual file')
         self.assets=assets;self.root=assets.parent
+        capability_file=self.root/'runtime_capabilities.json';self.capabilities=json.loads(capability_file.read_text(encoding='utf-8-sig')) if capability_file.is_file() else {}
+        if self.capabilities and (self.capabilities.get('version')!=1 or self.capabilities.get('platform')!='xbox360'):raise ValueError('Unsupported Xbox runtime capability file')
         self.manifest=json.loads((self.root/'assets.json').read_text(encoding='utf-8'))
         if self.manifest.get('version')!=1 or self.manifest.get('platform')!='xbox360':raise ValueError('An Xbox recomp folder installation is required')
         from .runtime_protocol import augment_manifest
         self.manifest=augment_manifest(self.root,self.manifest)
         self.resources=[];self.banks={};self._by_key={}
-        self.by_hash={};self.labels={}
+        from .identities import bank_labels
+        self.by_hash={};self.labels=bank_labels(self.manifest['entries'])
         self.warnings=[]
         for n,entry in enumerate(self.manifest['entries']):
             folder=self.safe(entry['folder'])
@@ -92,6 +105,10 @@ class Workspace:
             layout=json.loads((folder/'asset.json').read_text(encoding='utf-8'))
             self.banks[folder.name]=(entry,layout)
             self.by_hash[entry['hash']]=(entry,layout)
+            for record in layout.get('paired_resources',[]):
+                components=[dict(path=c['path'],folder=c['folder'],size=c['size']) for c in record['component_files']]
+                resource=Resource(self,folder.name,entry,record,layout,components)
+                self.resources.append(resource);self._by_key[resource.key]=resource
             for record in layout.get('records',[]):
                 components=[]
                 for j,start in enumerate(record['offsets']):
@@ -104,7 +121,7 @@ class Workspace:
             if progress and n%50==0:progress(n,len(self.manifest['entries']),folder.name)
         from .cdf import records
         for bank,(entry,layout) in self.banks.items():
-            if 'blocks' in layout:continue
+            if 'blocks' in layout or 'loose_segments' in layout:continue
             path=self.safe(entry['folder']+'/payload.dat')
             with path.open('rb') as stream:prefix=stream.read(4)
             if prefix!=bytes.fromhex('f0985030'):continue
@@ -145,5 +162,9 @@ class Workspace:
         if not path.is_relative_to(self.assets):raise ValueError('Resource path escapes assets folder')
         return path
     def of_type(self,kind):return [r for r in self.resources if r.kind==kind]
+    def require(self,feature,format=None):
+        supported=self.capabilities.get(feature,[18,19,20] if feature=='native_dds_formats' else False)
+        if format is not None:supported=format in supported
+        if not supported:raise ValueError('Update the recomp folder runtime before saving this feature: '+feature)
     def resource(self,key):return self._by_key[key]
     def report(self):return dict(platform='xbox360',banks=len(self.banks),resources={kind:len(self.of_type(kind)) for kind in TYPES.values()})

@@ -9,7 +9,8 @@ addresses are not used. The supplied corpus has 5,685 players, 443 schools,
 pointers validate. All 988 uniform routes resolve to existing Xbox asset hashes.
 
 Native getter/setter registrations and Xbox localization confirm the 30 scaled
-16-bit rating channels and 21 appearance/equipment properties. The promoted
+16-bit rating channels and 33 appearance/equipment properties. Thirty enum
+option lists are resolved through their own Xbox localization IDs. The promoted
 profile records only Xbox offsets, masks, menu limits and native evidence IDs.
 The logical player anchor is raw row +16. For example, native weight getter
 `84752968` and setter `848425d8` use anchor+0x8C bits 5..13; handedness uses
@@ -27,9 +28,21 @@ Observed Xbox SCNE mesh records are 176 bytes; embedded texture descriptors are
 Vertex declarations use Xenos formats. Instance transforms are selected only
 when the 128/144-byte candidate layout is unambiguous and homogeneous.
 
-Native DDS presently supports 2D BC1/BC2/BC3. GPU payload offsets are stored
+Embedded Xbox cloth retains vertex count at descriptor+8 and stream count in the
+high halfword at+12, but uses 24-byte stream descriptors rather than the GPU
+scene's 16-byte form. Twenty-one candidate cloth filenames match actual Xbox
+CRC identities. The combined U/regular jersey and regular shorts preview resolves
+exact SCNE and `unifregion`/`shortregion` TXTR record identities.
+
+Native DDS presently supports 2D BC1/BC2/BC3/BC4/BC5. Xbox DXT5A maps to ATI1/BC4,
+and DXN to ATI2/BC5, matching the SDK's native host formats. GPU payload offsets are stored
 plus one and may be nonzero for embedded textures. The editor decodes Xbox tile
 and endian layout only for source previews/identity; edited DDS stays native.
+
+The observed shoe scene uses Xenos 2/10/10/10 packed positions and a 240-byte
+named material table. All eight material names match their stored CRCs. Static
+upper/sole routing uses those names, not record order; runtime-only black vertex
+lighting is replaced by neutral lighting for the authored-artwork preview.
 
 ## Audio and localization
 
@@ -49,3 +62,10 @@ Observed literal tokens are 0x01/ASCII pairs. Other token kinds stay opaque.
 
 Reproduction tools under `tools/research` read supplied assets and a read-only
 Ghidra project. Private outputs and game data are excluded from version control.
+
+Paired-folder prototype: F0985030 resource descriptors retain their native
+record identities and metadata. CPU/GPU extents become individual decoded files;
+only the compatibility descriptor offsets and lengths are relocated. Exact
+shared extents retain one file, partial overlaps reject, and unclaimed gap/tail
+bytes are preserved. Synthetic and a two-record Xbox source-removal fixture pass; full corpus and runtime
+acceptance remain pending. No packed bank is generated.

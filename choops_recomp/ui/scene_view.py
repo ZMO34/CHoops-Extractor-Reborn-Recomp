@@ -60,12 +60,12 @@ void main(){vec4 c=textured?texture2D(diffuse,texcoord):vec4(0.72,0.75,0.81,1.0)
         gl.glPolygonMode(0x408,0x1B01 if self.wireframe else 0x1B02)
         projection=QMatrix4x4();projection.perspective(45.,max(1,self.width())/max(1,self.height()),self.radius*.001,self.radius*200)
         view=QMatrix4x4();a,p=math.radians(self.yaw),math.radians(self.pitch);direction=QVector3D(math.cos(p)*math.sin(a),math.sin(p),math.cos(p)*math.cos(a))
-        view.lookAt(self.center+direction*self.radius*self.distance,self.center,QVector3D(0,1,0));self.program.bind();self.program.setUniformValue('mvp',projection*view);self.program.setUniformValue('diffuse',0)
+        view.lookAt(self.center+direction*self.radius*self.distance,self.center,QVector3D(0,1,0));self.program.bind();self.program.setUniformValue('mvp',projection*view);gl.glUniform1i(self.program.uniformLocation('diffuse'),0)
         self.buffer.bind()
         for name,offset,size in [('position',0,3),('uv',12,2),('color',20,4)]:
             loc=self.program.attributeLocation(name);self.program.enableAttributeArray(loc);self.program.setAttributeBuffer(loc,0x1406,offset,size,36)
         for batch in self.batches:
-            texture=self.textures.get(batch.get('texture_index'));self.program.setUniformValue('textured',bool(texture))
+            texture=self.textures.get(batch.get('texture_index'));gl.glUniform1i(self.program.uniformLocation('textured'),int(texture is not None))
             from PySide6.QtGui import QVector4D
             self.program.setUniformValue('materialColor',QVector4D(*batch.get('color',(1.,1.,1.,1.))))
             if texture:texture.bind(0)

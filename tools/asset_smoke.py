@@ -24,18 +24,27 @@ def main():
     destination.mkdir(parents=True);manifest=dict(original.manifest,entries=selected)
     for entry in selected:shutil.copytree(original.root/entry['folder'],destination/entry['folder'])
     (destination/'assets.json').write_text(json.dumps(manifest))
+    shutil.copy2(original.root/'runtime_capabilities.json',destination/'runtime_capabilities.json')
     before={name:hashes(destination/'assets'/name) for name in names}
     w=Workspace(destination/'assets');resource=w.of_type('ROST')[0];m=Roster(resource.blocks()[0]);result=uniforms.create(w,m,resource,team,variant,900)
     reopened=Workspace(destination/'assets');reparsed=Roster(reopened.of_type('ROST')[0].blocks()[0])
     assert len(uniforms.rows(reparsed))==len(rows)+1
     assert all(before[name]==hashes(destination/'assets'/name) for name in names)
     assert all(name in reopened.banks for name in result['folders'])
-    registry=json.loads((destination/'asset_edits.json').read_text())
-    for edit in registry['edits']:
+    discovered=[]
+    for name in result['folders']:
+        layout=json.loads((destination/'assets'/name/'asset.json').read_text())
+        for t in layout['textures']:discovered.append(dict(source=dict(bank=layout['identity']['hash'],record=t['record']),file='assets/'+name+'/'+t['path']))
+    assert not (destination/'asset_edits.json').exists()
+    for edit in discovered:
         r=next(r for r in reopened.resources if r.entry['hash']==edit['source']['bank'] and r.record['index']==edit['source']['record'])
         from choops_recomp.dds import xbox_dds,image
         blocks=r.blocks();private=xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None);replacement=(destination/edit['file']).read_bytes()
-        assert private!=replacement and image(private).tobytes()==image(replacement).tobytes()
-    report=dict(result,registered_textures=len(registry['edits']),source_templates_unchanged=True,reopened_banks=len(reopened.banks))
+        source=next(source for source in original.resources if source.entry['hash']==r.entry['template_hash'] and source.record['index']==r.record['index'])
+        source_blocks=source.blocks();baseline=xbox_dds(source_blocks[0],source_blocks[1] if len(source_blocks)>1 else None)
+        assert private!=baseline and image(private).tobytes()==image(baseline).tobytes()
+        assert private==replacement
+    assert not any(p for name in result['folders'] for p in (destination/'assets'/name).rglob('*.stored'))
+    report=dict(result,discovered_textures=len(discovered),source_templates_unchanged=True,reopened_banks=len(reopened.banks),separate_registry_required=False)
     (destination/'smoke-report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))
 if __name__=='__main__':main()

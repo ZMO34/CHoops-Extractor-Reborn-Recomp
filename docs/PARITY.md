@@ -8,23 +8,24 @@ writer, preservation test or integration requirement.
 | Feature | Current state | Work remaining |
 | --- | --- | --- |
 | Open installed assets; search resources | Implemented | Cancelable indexing and diagnostics polish |
-| DDS preview/export/import | BC1/2/3 2D implemented | Other Xbox formats, mip/cubemap parity, batch workflows |
-| Native higher-resolution DDS | Runtime interface implemented | Editor/runtime acceptance and additional layouts |
+| Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | Paired materialization prototype tested synthetically; real-data and gameplay acceptance pending |
+| DDS preview/export/import | BC1–BC5 2D implemented | Other Xbox formats, mip/cubemap parity, batch workflows |
+| Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
 | Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
-| Uniform/shoe previews | General SCNE available | Authored cloth/artwork binding, combined jersey/shorts, numbers/name glyphs |
+| Uniform/shoe previews | Combined jersey/shorts and authored shoe upper/sole DDS implemented | Numbers/name glyphs, preview selection polish, runtime material effects |
 | Uniform OBJ workflow | Pending | Xbox source-bound geometry/rest-position import and export |
 | Court surface controls | Pending | Xbox geometry bindings and preservation tests |
 | Roster names, jersey, height, position | Implemented | Search/filter and related side panels |
 | Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare | School filters and richer selection controls |
-| Appearance/equipment | 21 Xbox-verified properties | Remaining hair/tattoo/animation/class fields, caption choices |
+| Appearance/equipment | 33 Xbox-verified properties, 30 native option lists | Class/redshirt/scholarship, footwear and jump-shot bindings |
 | Palette | 31 RGBA slots | Xbox semantic captions and preview bindings |
 | School/coach/arena relationships | Xbox corpus validated | Checked assignment UI, reciprocal writers |
 | Player transfers / scholarships | Pending | Xbox native ownership/count/slot contract |
 | Conference realignment/history | Pending | Xbox consumers, reciprocal membership writer |
 | Roster CSV and selective import | Implemented confirmed fields, source-bound review, one-step undo | Additional Xbox fields as verified |
 | Existing uniform asset/shape editing | Structural writer implemented | Asset-existence validation and preview |
-| New uniforms and asset links | Private-copy addition/reopen/pixel-identity tests passed | Full runtime TOC tests, stadium/menu-logo independence |
-| Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing validation and artwork controls |
+| New uniforms and asset links | Private-copy addition/reopen/pixel identities and sorted virtual TOC tests passed | Gameplay acceptance, stadium/menu-logo independence |
+| Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing and DDS/image artwork controls implemented; runtime acceptance pending |
 | WAV export/import/preview | Implemented | Native loop/seek and duration parity, packaging acceptance |
 | Batch WAV | Export and import preflight implemented | Transactional batch apply and GUI review |
 | Raw inspection/diagnostics | Pending | Bounded asset inspection and actionable failures |

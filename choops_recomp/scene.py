@@ -6,10 +6,21 @@ No platform-specific shader or appearance assumptions are imported.
 """
 import math
 import struct
+import zlib
 from .binary import Binary
 from .dds import xbox_dds
 
-VERTEX={57:'3f',37:'2f',38:'4f',36:'f',31:'2e',32:'4e',25:'2h',26:'4h',6:'4B'}
+VERTEX={57:'3f',37:'2f',38:'4f',36:'f',31:'2e',32:'4e',25:'2h',26:'4h',6:'4B',7:'I',16:'I',17:'I'}
+
+def packed_components(word,fmt,signed=True,normalized=True):
+    # Xenos component widths/offsets match the SDK shader interpreter.
+    widths={7:(10,10,10,2),16:(11,11,10),17:(10,11,11)}[fmt];values=[];shift=0
+    for width in widths:
+        value=word>>shift&((1<<width)-1);shift+=width
+        if signed and value&(1<<(width-1)):value-=1<<width
+        if normalized:value=max(-1.,value/((1<<(width-1))-1)) if signed else value/((1<<width)-1)
+        values.append(value)
+    return tuple(values)
 
 
 def instances(head):
@@ -55,6 +66,19 @@ def _materials(head):
     if tc>4096 or sc>256 or mc>10000:raise ValueError('Material tables exceed limits')
     tt=head.relative(0x24) if tc else 0;st=head.relative(0x2c) if sc else 0;mt=head.relative(0x38) if mc and head.u32(0x38) else 0
     head.take(tt,tc*224);head.take(st,sc*48)
+    if mc and not mt and head.u32(0x34):
+        external=head.relative(0x34);candidates=[]
+        for stride,name_offset,hash_offset in ((240,0,4),(60,36,40)):
+            try:
+                head.take(external,mc*stride);candidate={}
+                for i in range(mc):
+                    off=external+i*stride;name=head.string(head.relative(off+name_offset));identity=head.u32(off+hash_offset)
+                    if not name or zlib.crc32(name.encode('ascii'))&0xffffffff!=identity:raise ValueError('External material name/hash mismatch')
+                    candidate[i]=dict(texture_index=None,material_name=name,material_hash=identity)
+                if candidate not in candidates:candidates.append(candidate)
+            except (ValueError,UnicodeError):continue
+        if len(candidates)!=1:raise ValueError('Unsupported or ambiguous Xbox external material table')
+        return candidates[0]
     if not mt:return result
     head.take(mt,mc*40)
     ids={}
@@ -106,7 +130,9 @@ def preview(blocks,triangle_limit=400000):
             if not 1<=vertices<=250000 or not 1<=streams_count<=16:raise ValueError('Invalid Xbox vertex buffer dimensions')
             streams=[]
             for j in range(streams_count):
-                entry=desc+24+j*16;stride,length=head.u32(entry+4),head.u32(entry+8)
+                # Embedded Xbox cloth carries CPU stream descriptors with two
+                # additional words. GPU-backed SCNE uses the 16-byte form.
+                entry=desc+24+j*(24 if len(blocks)==1 else 16);stride,length=head.u32(entry+4),head.u32(entry+8)
                 if not 1<=stride<=256 or vertices*stride!=length:raise ValueError('Vertex buffer length differs from stride/count')
                 start=head.relative(entry+12) if len(blocks)==1 else head.u32(entry+12)-1
                 streams.append((stride,gpu.take(start,length)))
@@ -116,23 +142,27 @@ def preview(blocks,triangle_limit=400000):
             for j in range(n):
                 off=decl+j*64;code=head.take(off+8,8);fmt=int.from_bytes(code[4:],'big')&63
                 if code[0] not in (0x20,0x30) or code[2]>=streams_count or fmt not in VERTEX:continue
-                attributes.append(dict(offset=code[1],stream=code[2],format=fmt,index=code[3],semantic=head.u32(off),quantized=code[0]==0x30,bias=struct.unpack('>4f',head.take(off+16,16)),scale=struct.unpack('>4f',head.take(off+32,16))))
-            positions=[a for a in attributes if a['offset']==0 and a['index']==0 and a['format'] in (57,26,38)]
+                attributes.append(dict(offset=code[1],stream=code[2],format=fmt,index=code[3],format_word=int.from_bytes(code[4:],'big'),semantic=head.u32(off),quantized=code[0]==0x30,bias=struct.unpack('>4f',head.take(off+16,16)),scale=struct.unpack('>4f',head.take(off+32,16))))
+            positions=[a for a in attributes if a['offset']==0 and a['index']==0 and a['format'] in (57,26,38,7,16,17)]
             if len(positions)!=1:raise ValueError('Unsupported/ambiguous position declaration')
             position=positions[0]
             # Xenos float/half two-component declarations in supplied meshes are
             # UV channels; retain explicit ambiguity instead of guessing a slot.
             uvs=[a for a in attributes if a['format'] in (31,37,25) and a['index']==0]
             uv=uvs[-1] if uvs else None
-            colors=[a for a in attributes if a not in positions and a['format'] in (38,32) and a['index']==0]
+            colors=[a for a in attributes if a not in positions and (a['format'] in (38,32) or a['format']==6 and a['semantic']==0xe6fd34fb) and a['index']==0]
             color=colors[0] if len(colors)==1 else None
             def value(a,vertex):
                 stride,data=streams[a['stream']];fmt='>'+VERTEX[a['format']]
                 if a['offset']+struct.calcsize(fmt)>stride:raise ValueError('Declaration exceeds vertex stride')
                 v=struct.unpack_from(fmt,data,vertex*stride+a['offset'])
+                if a['format'] in (7,16,17):v=packed_components(v[0],a['format'],bool(a['format_word']&256),not bool(a['format_word']&512))
                 if a['format'] in (25,26):
                     v=tuple(max(-1.,x/32767.) for x in v)
-                    if a['quantized']:v=tuple(x*a['scale'][k]+a['bias'][k] for k,x in enumerate(v))
+                if a['format']==6:
+                    endian=a['format_word']>>6&3;swap=(0,1,3,2)[endian];v=tuple(v[k^swap] for k in range(4))
+                    if not a['format_word']&512:v=tuple(x/255 for x in v)
+                if a['format'] in (7,16,17,25,26) and a['quantized']:v=tuple(x*a['scale'][k]+a['bias'][k] for k,x in enumerate(v))
                 if not all(math.isfinite(x) and abs(x)<1e8 for x in v):raise ValueError('Invalid vertex values')
                 return v
             points=[]

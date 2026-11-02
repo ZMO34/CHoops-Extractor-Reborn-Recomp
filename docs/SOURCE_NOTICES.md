@@ -12,6 +12,10 @@ retain its COPYING and all dependency notices when packaging. The setup tool pin
 the release URL and SHA-256. Its FFmpeg dependencies decode XMA2; this editor does
 not claim an XMA encoder. WAV imports use host PCM substitution.
 
+The Xbox tiling algorithm and packed vertex-format layout follow the pinned
+ReXGlue/Xenia SDK. Retain [the full notice](XENIA_TEXTURE_LICENSE.txt) in source
+and binary distributions.
+
 Upstream documentation:
 - https://github.com/vgmstream/vgmstream/blob/master/doc/USAGE.md
 - https://github.com/vgmstream/vgmstream/blob/master/doc/TXTH.md

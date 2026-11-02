@@ -26,18 +26,37 @@ public class XboxFieldAudit extends GhidraScript {
                 java.util.List<String> lines=java.nio.file.Files.readAllLines(java.nio.file.Path.of(args[1]));
                 ids=new long[lines.size()];for(int i=0;i<ids.length;i++)ids[i]=Long.parseUnsignedLong(lines.get(i).trim(),16);
             }
+            // Caption registrations are DWORD aligned. Index all requested IDs
+            // in one bounded pass instead of rescanning the executable per ID.
+            java.util.HashMap<Long,java.util.List<Address>> matches=new java.util.HashMap<>();
+            for(long id:ids)matches.put(id,new java.util.ArrayList<>());
+            for(MemoryBlock block:memory.getBlocks()) {
+                if(!block.isInitialized())continue;
+                final int chunkSize=4*1024*1024;
+                for(long offset=0;offset<block.getSize();offset+=chunkSize) {
+                    monitor.checkCancelled();int size=(int)Math.min(chunkSize,block.getSize()-offset);byte[] chunk=new byte[size];memory.getBytes(block.getStart().add(offset),chunk);
+                    for(int at=0;at+3<size;at+=4) {
+                        long value=(long)(chunk[at]&255)<<24 | (long)(chunk[at+1]&255)<<16 | (long)(chunk[at+2]&255)<<8 | chunk[at+3]&255;
+                        java.util.List<Address> hits=matches.get(value);
+                        if(hits!=null && hits.size()<16)hits.add(block.getStart().add(offset+at));
+                    }
+                }
+            }
             for(long id:ids) {
-                byte[] pattern={(byte)(id>>24),(byte)(id>>16),(byte)(id>>8),(byte)id};
                 out.printf("caption=%08x%n",id);
                 out.flush();
-                int found=0;
-                for(MemoryBlock block:memory.getBlocks()) {
-                    if(!block.isInitialized())continue;
-                    Address pos=block.getStart();
-                    while(pos.compareTo(block.getEnd())<=0) {
-                        Address match=memory.findBytes(pos,block.getEnd(),pattern,null,true,monitor);
-                        if(match==null)break;
+                for(Address match:matches.get(id)) {
+                        MemoryBlock block=memory.getBlock(match);
+                        if(match.subtract(block.getStart())<12 || match.add(60).compareTo(block.getEnd())>0)continue;
                         out.println("match="+match);
+                        if(memory.getInt(match.subtract(8))==2) {
+                            int maximum=memory.getInt(match.add(52));long options=Integer.toUnsignedLong(memory.getInt(match.add(56)));
+                            MemoryBlock optionBlock=memory.getBlock(toAddr(options));
+                            if(maximum>=0 && maximum<256 && optionBlock!=null && !optionBlock.isExecute()) {
+                                out.printf("options_max=%d table=%08x%n",maximum,options);
+                                for(int option=0;option<=maximum;option++)out.printf("option=%d id=%08x%n",option,memory.getInt(toAddr(options+option*4)));
+                            }
+                        }
                         Address from=match.subtract(Math.min(32,match.subtract(block.getStart())));
                         for(int k=0;k<24;k++) {
                             Address a=from.add(k*4);
@@ -58,10 +77,6 @@ public class XboxFieldAudit extends GhidraScript {
                             }
                         }
                         for(Reference reference:getReferencesTo(match))out.println("xref="+reference.getFromAddress());
-                        if(++found>=16)break;
-                        pos=match.add(1);
-                    }
-                    if(found>=16)break;
                 }
             }
             decompiler.dispose();

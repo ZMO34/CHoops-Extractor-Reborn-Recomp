@@ -1,7 +1,14 @@
-"""Direct owning-resource file edits and the native binding registry."""
+"""Direct owning-resource edits; modern runtimes discover files in place."""
 import json
 from . import dds,audio,scene
 from .workspace import atomic_write,sha
+
+
+def artwork_payload(path,original):
+    """Retain supplied DDS or encode image artwork at its supplied resolution."""
+    from pathlib import Path
+    path=Path(path)
+    return path.read_bytes() if path.suffix.casefold()=='.dds' else dds.from_image(path,original)
 
 
 def reference(resource):
@@ -11,6 +18,9 @@ def reference(resource):
 
 
 def register(resource,source,path,kind):
+    # Modern runtimes discover conventional resource files in their own folders.
+    # Keep this compatibility adapter only for pre-migration installations.
+    if resource.workspace.manifest.get('storage')=='loose-resources':return
     root=resource.workspace.root;marker=root/'asset_edits.json';before=marker.read_bytes() if marker.exists() else None
     registry=json.loads(before) if before else dict(version=1,platform='xbox360',edits=[])
     if registry.get('version')!=1 or registry.get('platform')!='xbox360':raise ValueError('Unsupported edit registry')
@@ -21,6 +31,7 @@ def register(resource,source,path,kind):
 
 def save_scene_texture(resource,index,payload):
     original=next(t['dds'] for t in scene.textures(resource.blocks()) if t['index']==index and 'dds' in t)
+    resource.workspace.require('native_dds_formats',next(fmt for fmt,(code,size) in dds.FORMATS.items() if code==original[84:88]))
     folder=resource.folder;folder.mkdir(parents=True,exist_ok=True);path=folder/f'texture_{index:04d}.dds'
     if not path.exists():atomic_write(path,original)
     dds.replace(path,payload,original);source=dict(reference(resource),texture=index);register(resource,source,path,'dds');return path
@@ -28,10 +39,12 @@ def save_scene_texture(resource,index,payload):
 
 def save_texture(resource,payload):
     blocks=resource.blocks();original=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None)
+    resource.workspace.require('native_dds_formats',next(fmt for fmt,(code,size) in dds.FORMATS.items() if code==original[84:88]))
     folder=resource.folder;folder.mkdir(parents=True,exist_ok=True);path=folder/'texture.dds'
     if not path.exists():atomic_write(path,original)
     dds.replace(path,payload,original);register(resource,reference(resource),path,'dds');return path
 
 
 def save_audio(resource,path):
+    resource.workspace.require('native_pcm')
     audio.import_wav(resource,path);register(resource,reference(resource),resource.folder/'audio.wav','pcm')

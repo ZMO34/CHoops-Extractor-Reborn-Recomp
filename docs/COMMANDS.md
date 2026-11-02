@@ -15,3 +15,9 @@ python -m venv .venv
 `RESOURCE_KEY` is the bank/record identity; stream resources include `:INDEX`.
 Use CLI `--help` for roster and uniform commands. GUI and CLI share their writers.
 Do not infer that a command's presence certifies runtime acceptance.
+
+`runtime/materialize_paired.py` is a development migration prototype. Use only
+on private fixtures while full-corpus and gameplay checks remain pending; do not run it against an active game installation.
+
+`import-artwork RESOURCE_KEY image.png` shares the texture writer and supports
+DDS, PNG, JPEG, TGA and BMP inputs without chunk rebuilding.

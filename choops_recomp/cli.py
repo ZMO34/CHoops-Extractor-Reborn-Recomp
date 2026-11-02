@@ -12,6 +12,7 @@ def main(argv=None):
     p=argparse.ArgumentParser(description='Xbox recomp assets-folder editor')
     p.add_argument('--assets',type=Path,required=True);sub=p.add_subparsers(dest='command',required=True)
     sub.add_parser('info')
+    s=sub.add_parser('inspect-resource');s.add_argument('resource');s.add_argument('--component',type=int,default=0);s.add_argument('--offset',type=lambda value:int(value,0),default=0);s.add_argument('--length',type=int,default=4096)
     for command in ('export-wav','import-wav','export-dds','import-dds','import-artwork','scene-info'):
         s=sub.add_parser(command);s.add_argument('resource')
         if command!='scene-info':s.add_argument('file',type=Path)
@@ -44,7 +45,10 @@ def main(argv=None):
         else:model.set_string(args.table,args.index,args.field,args.value)
         model.save(resource.component_path());print('Xbox roster saved');return 0
     resource=w.resource(args.resource)
-    if args.command=='export-wav':print(json.dumps(audio.export_wav(resource,args.file),indent=2))
+    if args.command=='inspect-resource':
+        from .inspection import page,hex_text
+        print(hex_text(page(resource,args.component,args.offset,args.length),args.offset))
+    elif args.command=='export-wav':print(json.dumps(audio.export_wav(resource,args.file),indent=2))
     elif args.command=='import-wav':edits.save_audio(resource,args.file);print('Native WAV saved')
     elif args.command=='scene-info':
         result=scene.preview(resource.blocks());print(json.dumps(dict(parts=len(result['meshes']),triangles=sum(len(m['vertices'])//3 for m in result['meshes']),warnings=result['warnings']),indent=2))

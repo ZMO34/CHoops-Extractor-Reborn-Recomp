@@ -67,5 +67,5 @@ Paired-folder prototype: F0985030 resource descriptors retain their native
 record identities and metadata. CPU/GPU extents become individual decoded files;
 only the compatibility descriptor offsets and lengths are relocated. Exact
 shared extents retain one file, partial overlaps reject, and unclaimed gap/tail
-bytes are preserved. Synthetic and a two-record Xbox source-removal fixture pass; full corpus and runtime
+bytes are preserved. Synthetic and all 40 Xbox pairs pass source-removal checks; installed migration and runtime
 acceptance remain pending. No packed bank is generated.

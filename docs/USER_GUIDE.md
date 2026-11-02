@@ -56,3 +56,8 @@ JPEG, TGA and BMP. These are encoded to the original BC1–BC5 format at the
 supplied dimensions with mipmaps. Supply the original size or a proportional
 power-of-two upscale; the editor does not downsize artwork. Covers can be shared
 by several tracks; the preview tooltip identifies that relationship.
+
+Select a resource and choose Inspect resource files to view its component bytes.
+Choose the component and a hexadecimal offset; each read displays up to 4 KiB
+without crossing the component boundary. Legacy paired source components may
+still be compressed; the inspector labels that representation explicitly.

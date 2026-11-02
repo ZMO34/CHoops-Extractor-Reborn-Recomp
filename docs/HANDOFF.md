@@ -55,7 +55,12 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 67 tests.
+not yet migrated the installed game. The current editor suite passes 69 tests.
+
+The complete paired corpus (40 pairs / 2,361 records) now passes private
+source-removal checks in both reader implementations. Installed migration and
+gameplay remain pending. Resource-file inspection is available in each library
+and the CLI, with bounded reads confined to a selected component.
 
 
 ---
@@ -70,7 +75,7 @@ writer, preservation test or integration requirement.
 | Feature | Current state | Work remaining |
 | --- | --- | --- |
 | Open installed assets; search resources | Implemented | Cancelable indexing and diagnostics polish |
-| Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | Paired materialization prototype tested synthetically; real-data and gameplay acceptance pending |
+| Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | All 40 paired banks pass private source-removal checks; installed migration and gameplay acceptance pending |
 | DDS preview/export/import | BC1–BC5 2D implemented | Other Xbox formats, mip/cubemap parity, batch workflows |
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
 | Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
@@ -90,7 +95,7 @@ writer, preservation test or integration requirement.
 | Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing and DDS/image artwork controls implemented; runtime acceptance pending |
 | WAV export/import/preview | Implemented | Native loop/seek and duration parity, packaging acceptance |
 | Batch WAV | Export and import preflight implemented | Transactional batch apply and GUI review |
-| Raw inspection/diagnostics | Pending | Bounded asset inspection and actionable failures |
+| Raw inspection/diagnostics | Bounded owning-resource hex inspection in GUI/CLI implemented | Richer structured diagnostics |
 | Change packages | Pending | Source-bound asset deltas without unchanged game bytes |
 | Documentation ecosystem | Established | Update evidence and acceptance records with each feature |
 
@@ -108,7 +113,7 @@ evidence before adoption; incomplete research is not silently marked obsolete.
 
 # Test report
 
-- Core and Qt suite: **67 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **69 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -163,3 +168,11 @@ expanded texture layouts and full feature parity are not certified by these test
   splitting and deleting the original metadata/data payloads (548,952-byte data
   bank). Editor and shared runtime reader agree. Interrupted commit/retry tests
   retain the old mapping until the owner metadata commits atomically.
+
+- Full private paired corpus: **40 pairs, 2,361 records** match the shared runtime
+  reader and editor after original metadata/data payload removal. All direct
+  mapped file extents validate. No installed assets were migrated.
+- Bounded resource inspection tests cover component boundaries, EOF, page limits
+  and current grown loose-file sizes.
+- Latest packaged editor opens the installed assets with all four tabs, 3,378
+  banks and no startup error; the game is not launched.

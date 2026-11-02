@@ -17,3 +17,5 @@
 - Import image artwork at supplied resolution with complete BC1–BC5 mip chains.
 - Resolve all native jukebox artist/cover groups and add shared-cover editing.
 - Prototype paired-resource component materialization without source payload dependencies.
+
+- Validate all 40 paired banks without source payloads and add bounded resource inspection.

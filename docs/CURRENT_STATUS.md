@@ -48,4 +48,9 @@ Artwork imports accept DDS, PNG, JPEG, TGA and BMP for textures, embedded scene
 textures and jukebox covers. Image inputs retain supplied resolution and generate
 a complete mip chain. All 87 native song rows now resolve artist/cover groups.
 A paired-folder materialization prototype passes source-removal tests; it has
-not yet migrated the installed game. The current editor suite passes 67 tests.
+not yet migrated the installed game. The current editor suite passes 69 tests.
+
+The complete paired corpus (40 pairs / 2,361 records) now passes private
+source-removal checks in both reader implementations. Installed migration and
+gameplay remain pending. Resource-file inspection is available in each library
+and the CLI, with bounded reads confined to a selected component.

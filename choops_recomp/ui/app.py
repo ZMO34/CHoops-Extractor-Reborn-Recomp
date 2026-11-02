@@ -150,6 +150,24 @@ class Studio(QMainWindow):
     def make_library(self,title,kind):
         page=QWidget();layout=QVBoxLayout(page);split=QSplitter();layout.addWidget(split);left=QWidget();l=QVBoxLayout(left);search=QLineEdit();search.setPlaceholderText('Search assets…');l.addWidget(search);view=QListView();view.setUniformItemSizes(True);model=LibraryModel();proxy=QSortFilterProxyModel();proxy.setSourceModel(model);proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive);view.setModel(proxy);l.addWidget(view);split.addWidget(left);right=QWidget();detail=QVBoxLayout(right);split.addWidget(right);split.setStretchFactor(1,2)
         search.textChanged.connect(proxy.setFilterFixedString);view.selectionModel().currentChanged.connect(lambda index,old,k=kind:self.select_resource(k,index));self.pages[kind]=dict(model=model,proxy=proxy,view=view,layout=detail);self.tabs.addTab(page,title)
+        inspect=QPushButton('Inspect resource files…');inspect.clicked.connect(lambda checked=False,k=kind:self.inspect_resource(k));l.addWidget(inspect)
+    def inspect_resource(self,kind):
+        resource=self.selected(kind,self.pages[kind]['view'].currentIndex())
+        if resource is None:return
+        from ..inspection import components,page,hex_text
+        try:
+            entries=components(resource);dialog=QDialog(self);dialog.setWindowTitle('Inspect '+resource.label);dialog.resize(1000,650);layout=QVBoxLayout(dialog)
+            layout.addWidget(QLabel(f'{resource.key} • {resource.kind} • record CRC {resource.record["id"]:08x} • read only'))
+            picker=QComboBox()
+            for entry in entries:picker.addItem(f'Component {entry["index"]}: {entry["size"]:,} bytes • {entry["encoding"]}')
+            layout.addWidget(picker);row=QHBoxLayout();offset=QLineEdit('0');offset.setPlaceholderText('Hexadecimal component offset');row.addWidget(offset);read=QPushButton('Read 4 KiB');row.addWidget(read);layout.addLayout(row)
+            location=QLabel();location.setWordWrap(True);layout.addWidget(location);view=QPlainTextEdit();view.setReadOnly(True);view.setStyleSheet('font-family: Consolas, monospace');layout.addWidget(view)
+            def refresh():
+                try:
+                    index=picker.currentIndex();start=int(offset.text(),16);entry=entries[index];data=page(resource,index,start);location.setText(str(entry['path'] or 'Empty component'));view.setPlainText(hex_text(data,start))
+                except (ValueError,OSError,IndexError) as exc:view.setPlainText(str(exc))
+            read.clicked.connect(refresh);picker.currentIndexChanged.connect(lambda _:refresh());refresh();dialog.exec()
+        except (ValueError,OSError) as exc:self.error(str(exc))
     def run_job(self,fn,callback):
         job=Work(fn);self.jobs.append(job)
         def finished(result):

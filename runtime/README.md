@@ -44,6 +44,6 @@ It writes decoded component files and preserves unknown gaps, retaining original
 payloads as backups. The owner metadata is the atomic pair commit point; interrupted
 writes keep the prior mapping and can be retried. Exact shared ranges preserve
 identity and partial overlaps reject. Individual source banks currently have a
-256 MiB migration limit. Synthetic and one private Xbox pair pass source-removal
-checks; full-corpus and gameplay acceptance are pending. Never migrate while a
+256 MiB migration limit. Synthetic and all 40 private Xbox pairs (2,361 records) pass source-removal
+checks; installed migration and gameplay acceptance are pending. Never migrate while a
 game process is running. The supplied installation has not been migrated.

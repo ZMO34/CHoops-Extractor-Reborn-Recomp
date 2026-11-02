@@ -21,3 +21,8 @@ on private fixtures while full-corpus and gameplay checks remain pending; do not
 
 `import-artwork RESOURCE_KEY image.png` shares the texture writer and supports
 DDS, PNG, JPEG, TGA and BMP inputs without chunk rebuilding.
+
+`inspect-resource RESOURCE_KEY --component 0 --offset 0x100 --length 256` reads
+only the selected owning component. Pages larger than 64 KiB are rejected.
+`tools/paired_smoke.py --assets GAME/assets --output output/NEW_PRIVATE_FOLDER`
+validates paired extraction on a private copy and removes only copied payloads.

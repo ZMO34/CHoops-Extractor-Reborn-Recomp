@@ -8,7 +8,7 @@ writer, preservation test or integration requirement.
 | Feature | Current state | Work remaining |
 | --- | --- | --- |
 | Open installed assets; search resources | Implemented | Cancelable indexing and diagnostics polish |
-| Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | Paired materialization prototype tested synthetically; real-data and gameplay acceptance pending |
+| Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | All 40 paired banks pass private source-removal checks; installed migration and gameplay acceptance pending |
 | DDS preview/export/import | BC1–BC5 2D implemented | Other Xbox formats, mip/cubemap parity, batch workflows |
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
 | Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
@@ -28,7 +28,7 @@ writer, preservation test or integration requirement.
 | Licensed Music and Band/Fight Songs tabs | Implemented from Xbox evidence | Shared-cover routing and DDS/image artwork controls implemented; runtime acceptance pending |
 | WAV export/import/preview | Implemented | Native loop/seek and duration parity, packaging acceptance |
 | Batch WAV | Export and import preflight implemented | Transactional batch apply and GUI review |
-| Raw inspection/diagnostics | Pending | Bounded asset inspection and actionable failures |
+| Raw inspection/diagnostics | Bounded owning-resource hex inspection in GUI/CLI implemented | Richer structured diagnostics |
 | Change packages | Pending | Source-bound asset deltas without unchanged game bytes |
 | Documentation ecosystem | Established | Update evidence and acceptance records with each feature |
 

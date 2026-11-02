@@ -1,6 +1,6 @@
 # Test report
 
-- Core and Qt suite: **67 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **69 passed**, including all 33 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -55,3 +55,11 @@ expanded texture layouts and full feature parity are not certified by these test
   splitting and deleting the original metadata/data payloads (548,952-byte data
   bank). Editor and shared runtime reader agree. Interrupted commit/retry tests
   retain the old mapping until the owner metadata commits atomically.
+
+- Full private paired corpus: **40 pairs, 2,361 records** match the shared runtime
+  reader and editor after original metadata/data payload removal. All direct
+  mapped file extents validate. No installed assets were migrated.
+- Bounded resource inspection tests cover component boundaries, EOF, page limits
+  and current grown loose-file sizes.
+- Latest packaged editor opens the installed assets with all four tabs, 3,378
+  banks and no startup error; the game is not launched.

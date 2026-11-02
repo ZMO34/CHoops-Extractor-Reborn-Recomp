@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "platform": "xbox360",
+  "brands": {
+    "0": {
+      "name": "Generic",
+      "base": 0,
+      "styles": 2,
+      "colors": 2
+    },
+    "1": {
+      "name": "Nike",
+      "base": 100,
+      "styles": 3,
+      "colors": 16
+    },
+    "2": {
+      "name": "Reebok",
+      "base": 200,
+      "styles": 1,
+      "colors": 16
+    },
+    "3": {
+      "name": "Adidas",
+      "base": 300,
+      "styles": 1,
+      "colors": 16
+    },
+    "4": {
+      "name": "Special / Jordan artwork",
+      "base": 500,
+      "styles": 4,
+      "colors": 2
+    }
+  },
+  "colors": {
+    "0": "White",
+    "1": "Black",
+    "2": "Red",
+    "3": "Yellow",
+    "4": "Blue",
+    "5": "Green",
+    "6": "Orange",
+    "7": "Purple",
+    "8": "Black / White",
+    "9": "Black / Black",
+    "10": "Black / Red",
+    "11": "Black / Yellow",
+    "12": "Black / Blue",
+    "13": "Black / Green",
+    "14": "Black / Orange",
+    "15": "Black / Purple"
+  }
+}

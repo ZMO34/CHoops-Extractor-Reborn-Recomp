@@ -75,7 +75,10 @@ def main(argv=None):
         if args.command=='add-uniform':
             from .uniforms import create
             print(json.dumps(create(w,model,resource,args.team,args.variant,args.asset),indent=2));return 0
-        if args.field in ('jersey_number','height_inches','position_code') or args.field in FIELDS:model.set_player(args.index,args.field,int(args.value))
+        if args.table=='players' and (args.field in ('jersey_number','height_inches','position_code') or args.field in FIELDS):model.set_player(args.index,args.field,int(args.value))
+        elif args.table=='conferences' and args.field not in ('name','abbreviation'):
+            from .conference_history import set_value
+            set_value(model,args.index,args.field,int(args.value))
         elif args.field.startswith('rating_'):model.set_rating(args.index,int(args.field[7:])-1,float(args.value))
         else:model.set_string(args.table,args.index,args.field,args.value)
         model.save(resource.component_path());print('Xbox roster saved');return 0

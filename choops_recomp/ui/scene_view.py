@@ -20,7 +20,7 @@ class SceneView(QOpenGLWidget):
         for mesh in meshes:
             if self.cutaway and mesh.get('hidden_by_default'):continue
             start=len(self.vertices);self.vertices.extend(mesh['vertices'])
-            layer={'floor':1,'paint':2,'centerlogo':3,'lines':4}.get(mesh['name'].lower(),0)
+            layer={'floor':1,'paint':2,'centerlogo':3,'lines':4}.get(mesh['name'].rsplit('/',1)[-1].lower(),0)
             for b in mesh['batches']:self.batches.append(dict(b,first=start+b['first'],layer=layer))
         self.fit();self.dirty=True;self.update()
     def fit(self):

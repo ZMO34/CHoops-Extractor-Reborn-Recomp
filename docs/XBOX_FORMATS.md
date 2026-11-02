@@ -89,3 +89,39 @@ The checked school membership/relationship profile and its entire Xbox corpus
 validation are documented in [ROSTER_RELATIONSHIPS.md](ROSTER_RELATIONSHIPS.md).
 Indexed uniform palette/mip/metric layouts, authored placement and the new
 Recomp-only dormant-row protocol are documented in [UNIFORMS.md](UNIFORMS.md).
+
+## Player, history and texture update
+
+The Xbox player profile now exposes 46 properties plus 30 ratings: class,
+scholarship, redshirt status/used, jumper, four footwear controls and four shot
+tendencies join the existing fields. Native redshirt exclusions and brand-specific
+shoe limits are enforced. Search, school/unassigned filters, numeric sorting and
+source-row mapping preserve correct player identity while editing filtered lists.
+Player shoes can be previewed using their assigned Home/Away artwork.
+
+Conference history exposes founded year, NCAA championships, NCAA Final Fours
+and previous-year bids. Changes preserve membership and all neighboring bytes.
+These big-endian scalars were checked across all 39 Xbox conference records;
+labels agree with the applicable baseline, but native UI getter bindings have
+not all been traced. Unconfirmed ordering/recency fields remain protected.
+
+Models offers combined arena/floor, arena-only and floor-only previews, preserving
+authored coordinates and separate material identities. Textures in either owning
+resource can be exported/replaced from the combined view. Runtime lighting,
+crowds and cloth simulation are outside this authored preview.
+
+All 16,093 installed TXTR descriptors are recognized: 12,016 ordinary BC,
+one packed BC base, 1,044 raw 2D, 11 raw cubemaps and 3,021 indexed textures.
+Added L8, RGB565, RGBA8, RG8, RG16F and RGBA16F export/import, face previews,
+and indexed artwork including team numbers. Raw DDS preserves native channel
+precision; PNG is a display-range edit. Indexed PNG requires at most 256 exact
+colors. Unrepresentable channel changes are rejected rather than quantized.
+
+Non-BC and packed-base imports update only loose component base pixels at native
+dimensions, preserving other mip storage and padding. Indexed edits use the
+verified palette/mip writer. No archive/chunk rebuilding is involved. Native GPU
+DDS substitution/upscaling remains BC1–BC5; raw upscaling and full raw mip-chain
+replacement are not implemented. Unknown future formats are rejected.
+
+Loading is cancellable; interrupted workers do not publish stale results.
+Full parity and gameplay certification are not claimed.

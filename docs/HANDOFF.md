@@ -19,7 +19,7 @@ distinguished from released functionality in the parity tracker.
 
 Implemented: installed-assets indexing, standard and paired resource discovery,
 Xbox DDS previews/replacement, textured scene preview with instance transforms,
-Xbox roster names/basic fields/palettes/uniform routing, 33 native player
+Xbox roster names/basic fields/palettes/uniform routing, 46 native player
 properties, 30 named ratings, undo/redo, and XMA2 WAV export/native PCM imports.
 Licensed music and band/fight songs have separate Audio views. All 87 jukebox
 title/index/category mappings were recovered from Xbox native tables and matched
@@ -28,8 +28,7 @@ to Xbox localization IDs. Band-bank clips retain their original numeric labels.
 Combined authored jersey/shorts and standalone shoe previews resolve Xbox cloth and uniform
 artwork by CRC identities. The embedded cloth stream descriptors are 24 bytes,
 versus 16 for GPU-backed scenes. Thirty native option lists supply appearance
-dropdowns, including hair, tattoos, post and free-throw animations. Authored number/name layers are now implemented. Footwear, eligibility and
-remaining player-class fields are still incomplete.
+dropdowns, including hair, tattoos, post and free-throw animations. Authored number/name layers are now implemented. Footwear, eligibility, class and shot tendencies are now implemented.
 
 Windows onedir packaging passes empty and installed-assets startup checks. The
 build excludes an unrelated Poppler ICU search path that otherwise introduced
@@ -91,6 +90,42 @@ exact-color indexed image import and bounded metric editing write owning files.
 Static cloth/body/material limitations and gameplay acceptance remain explicit.
 See ROSTER_RELATIONSHIPS.md and UNIFORMS.md for evidence and operation details.
 
+## Player, history and texture update
+
+The Xbox player profile now exposes 46 properties plus 30 ratings: class,
+scholarship, redshirt status/used, jumper, four footwear controls and four shot
+tendencies join the existing fields. Native redshirt exclusions and brand-specific
+shoe limits are enforced. Search, school/unassigned filters, numeric sorting and
+source-row mapping preserve correct player identity while editing filtered lists.
+Player shoes can be previewed using their assigned Home/Away artwork.
+
+Conference history exposes founded year, NCAA championships, NCAA Final Fours
+and previous-year bids. Changes preserve membership and all neighboring bytes.
+These big-endian scalars were checked across all 39 Xbox conference records;
+labels agree with the applicable baseline, but native UI getter bindings have
+not all been traced. Unconfirmed ordering/recency fields remain protected.
+
+Models offers combined arena/floor, arena-only and floor-only previews, preserving
+authored coordinates and separate material identities. Textures in either owning
+resource can be exported/replaced from the combined view. Runtime lighting,
+crowds and cloth simulation are outside this authored preview.
+
+All 16,093 installed TXTR descriptors are recognized: 12,016 ordinary BC,
+one packed BC base, 1,044 raw 2D, 11 raw cubemaps and 3,021 indexed textures.
+Added L8, RGB565, RGBA8, RG8, RG16F and RGBA16F export/import, face previews,
+and indexed artwork including team numbers. Raw DDS preserves native channel
+precision; PNG is a display-range edit. Indexed PNG requires at most 256 exact
+colors. Unrepresentable channel changes are rejected rather than quantized.
+
+Non-BC and packed-base imports update only loose component base pixels at native
+dimensions, preserving other mip storage and padding. Indexed edits use the
+verified palette/mip writer. No archive/chunk rebuilding is involved. Native GPU
+DDS substitution/upscaling remains BC1–BC5; raw upscaling and full raw mip-chain
+replacement are not implemented. Unknown future formats are rejected.
+
+Loading is cancellable; interrupted workers do not publish stale results.
+Full parity and gameplay certification are not claimed.
+
 
 ---
 
@@ -105,20 +140,20 @@ writer, preservation test or integration requirement.
 | --- | --- | --- |
 | Open installed assets; search resources | Implemented | Cancelable indexing and diagnostics polish |
 | Direct folder loading | Component reads, self-contained additions and natural DDS/WAV discovery implemented | All 40 paired banks pass private source-removal checks; installed migration and gameplay acceptance pending |
-| DDS preview/export/import | BC1–BC5 2D implemented | Other Xbox formats, mip/cubemap parity, batch workflows |
+| DDS preview/export/import | BC1–BC5, indexed, raw 2D/cubemap base editing implemented | Full raw mip-chain replacement and batch workflows |
 | Native higher-resolution DDS | BC1–BC5 upload/readback passed on hardware and WARP | Runtime acceptance and additional layouts |
-| Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, combined views |
+| Arena/floor textured 3D preview | Implemented observed layouts | Full source corpus, material/lightmap behavior, runtime lighting |
 | Uniform/shoe previews | Authored cloth, front/back numbers, curved surnames, school/player selection and shoe artwork implemented | Runtime cloth/body/material effects and gameplay acceptance |
 | Uniform indexed fonts | All 1,976 atlas/metric pairs validated; exact-color image and metric writers, preview implemented | Fixed native dimensions/palette capacity; gameplay acceptance |
 | Uniform OBJ workflow | Source-bound float3 cloth OBJ import/export in GUI/CLI; all 33 identified resources pass private preservation checks | Additional vertex layouts, rest/skin deformation parity and gameplay acceptance |
 | Court surface controls | Pending | Xbox geometry bindings and preservation tests |
 | Roster names, jersey, height, position | Implemented | Search/filter and related side panels |
 | Ratings | 30 Xbox-verified channels, copy/paste, selective CSV compare | School filters and richer selection controls |
-| Appearance/equipment | 33 Xbox-verified properties, 30 native option lists | Class/redshirt/scholarship, footwear and jump-shot bindings |
+| Appearance/equipment | 46 Xbox-verified properties, native option lists | Runtime acceptance |
 | Palette | 31 RGBA slots | Xbox semantic captions and preview bindings |
 | School/coach/arena relationships | Checked school dialog and CLI assignments for arena, coach, assistants and rivals | Gameplay/Legacy acceptance; shared arena identity intentionally retained |
-| Player transfers / scholarships | Checked 18-slot transfers, unassignment and lineup order implemented | Scholarship/eligibility fields and gameplay acceptance |
-| Conference realignment/history | Checked reciprocal realignment in GUI/CLI implemented | Historical statistics editing and gameplay acceptance |
+| Player transfers / scholarships | Checked 18-slot transfers, unassignment and lineup order implemented | Gameplay acceptance |
+| Conference realignment/history | Checked reciprocal realignment in GUI/CLI implemented | Four historical scalars implemented; unknown recency/order semantics and gameplay acceptance |
 | Roster CSV and selective import | Implemented confirmed fields, source-bound review, one-step undo | Additional Xbox fields as verified |
 | Existing uniform asset/shape editing | Checked editor, artwork validation, neckline/slot/unlock, private routing/artwork cloning and alternate availability implemented | Gameplay acceptance of new routing/dormant state |
 | New uniforms and asset links | Private Home/Away/alternate artwork and additive folders pass preservation/reopen/direct-map checks | Gameplay acceptance; stadium/menu-logo independence remains separate |
@@ -138,12 +173,48 @@ Upstream draft scorebug, Legacy/recruit and animation-port research is not
 represented as a released working feature. Relevant research requires new Xbox
 evidence before adoption; incomplete research is not silently marked obsolete.
 
+## Player, history and texture update
+
+The Xbox player profile now exposes 46 properties plus 30 ratings: class,
+scholarship, redshirt status/used, jumper, four footwear controls and four shot
+tendencies join the existing fields. Native redshirt exclusions and brand-specific
+shoe limits are enforced. Search, school/unassigned filters, numeric sorting and
+source-row mapping preserve correct player identity while editing filtered lists.
+Player shoes can be previewed using their assigned Home/Away artwork.
+
+Conference history exposes founded year, NCAA championships, NCAA Final Fours
+and previous-year bids. Changes preserve membership and all neighboring bytes.
+These big-endian scalars were checked across all 39 Xbox conference records;
+labels agree with the applicable baseline, but native UI getter bindings have
+not all been traced. Unconfirmed ordering/recency fields remain protected.
+
+Models offers combined arena/floor, arena-only and floor-only previews, preserving
+authored coordinates and separate material identities. Textures in either owning
+resource can be exported/replaced from the combined view. Runtime lighting,
+crowds and cloth simulation are outside this authored preview.
+
+All 16,093 installed TXTR descriptors are recognized: 12,016 ordinary BC,
+one packed BC base, 1,044 raw 2D, 11 raw cubemaps and 3,021 indexed textures.
+Added L8, RGB565, RGBA8, RG8, RG16F and RGBA16F export/import, face previews,
+and indexed artwork including team numbers. Raw DDS preserves native channel
+precision; PNG is a display-range edit. Indexed PNG requires at most 256 exact
+colors. Unrepresentable channel changes are rejected rather than quantized.
+
+Non-BC and packed-base imports update only loose component base pixels at native
+dimensions, preserving other mip storage and padding. Indexed edits use the
+verified palette/mip writer. No archive/chunk rebuilding is involved. Native GPU
+DDS substitution/upscaling remains BC1–BC5; raw upscaling and full raw mip-chain
+replacement are not implemented. Unknown future formats are rejected.
+
+Loading is cancellable; interrupted workers do not publish stale results.
+Full parity and gameplay certification are not claimed.
+
 
 ---
 
 # Test report
 
-- Core and Qt suite: **94 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **137 passed**, including all 46 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -238,3 +309,9 @@ expanded texture layouts and full feature parity are not certified by these test
   eight relationship fields, 13 school members, two uniform routes, nine artwork
   choices and an indexed font decode; no startup error. Existing shoe and court
   native GL checks also pass with the new glyph shader.
+
+Latest offline validation: 137 tests pass; the complete TXTR layout audit has zero
+failures and decodes all non-BC/indexed/packed-base pixels. This is not a
+16,093-resource write round trip. Combined native invisible GL: 84 meshes,
+50 DDS images. Private uniform creation/Home clone/alternate disable-restore
+repassed with original templates unchanged. No game or input automation used.

@@ -10,17 +10,25 @@ FORMATS={18:(b'DXT1',8),19:(b'DXT3',16),20:(b'DXT5',16),49:(b'ATI2',16),59:(b'AT
 def info(data):
     if len(data)<128 or data[:4]!=b'DDS ' or struct.unpack_from('<I',data,4)[0]!=124:raise ValueError('Invalid DDS')
     height,width=struct.unpack_from('<II',data,12);mips=max(1,struct.unpack_from('<I',data,28)[0]);fourcc=data[84:88]
-    if fourcc not in [x[0] for x in FORMATS.values()] or not 1<=width<=8192 or not 1<=height<=8192 or width%4 or height%4:raise ValueError('Supported native DDS: 2D BC1/BC2/BC3/BC4/BC5, at most 8192 pixels')
+    if fourcc not in [x[0] for x in FORMATS.values()]:
+        from .raw_texture import dds_info
+        return dds_info(data)
+    if fourcc not in [x[0] for x in FORMATS.values()] or not 1<=width<=8192 or not 1<=height<=8192:raise ValueError('Supported native DDS: 2D BC1/BC2/BC3/BC4/BC5, at most 8192 pixels')
     if struct.unpack_from('<I',data,112)[0] or struct.unpack_from('<I',data,24)[0]>1:raise ValueError('Only 2D DDS is supported')
     if mips>max(width,height).bit_length():raise ValueError('DDS mip count exceeds dimensions')
     bpp=next(size for code,size in FORMATS.values() if code==fourcc)
     expected=sum(((max(1,width>>i)+3)//4)*((max(1,height>>i)+3)//4)*bpp for i in range(mips))
     if len(data)!=128+expected:raise ValueError('DDS payload does not match its mip chain')
-    return dict(width=width,height=height,mips=mips,fourcc=fourcc.decode())
+    result=dict(width=width,height=height,mips=mips,fourcc=fourcc.decode())
+    if data[32:36]==b'XPAK':result['direct_component']=True
+    return result
 
 
 def image(data):
-    info(data)
+    descriptor=info(data)
+    if 'raw_format' in descriptor:
+        from .raw_texture import image_from_dds
+        return image_from_dds(data)
     with Image.open(io.BytesIO(data)) as source:return source.convert('RGBA')
 
 
@@ -41,7 +49,13 @@ def _encode_level(source,fourcc):
 def from_image(source,baseline,mipmaps=True):
     """Encode DDS artwork at its supplied size; never resize it to the old base."""
     old=info(baseline)
+    if 'raw_format' in old:
+        from .raw_texture import from_image as raw_from_image
+        return raw_from_image(source,baseline)
     with Image.open(source) as opened:art=opened.convert('RGBA')
+    if old.get('direct_component'):
+        if art.size!=(old['width'],old['height']):raise ValueError('Packed-base texture artwork must retain native dimensions')
+        header=bytearray(baseline[:128]);struct.pack_into('<I',header,28,1);return bytes(header)+_encode_level(art,old['fourcc'].encode())
     width,height=art.size;scale=width//old['width']
     if not 1<=width<=8192 or not 1<=height<=8192 or width%4 or height%4 or width<old['width'] or width%old['width'] or width*old['height']!=height*old['width'] or not scale or scale&(scale-1):raise ValueError('Keep the original aspect ratio and use its size or a power-of-two upscale')
     fourcc=old['fourcc'].encode();levels=[];level=art
@@ -77,8 +91,13 @@ def tiled_offset(x,y,pitch,log_bpp):
 def xbox_dds(cpu,gpu=None,base=None):
     if len(cpu)<0xAC:raise ValueError('Truncated Xbox TXTR')
     a,b,size,_,lod,dim=struct.unpack_from('>6I',cpu,0x94);fmt=b&63
+    if fmt==0 and cpu[8:12]==bytes.fromhex('24820002'):raise ValueError('Indexed Xbox atlas: use the indexed artwork editor')
+    if fmt not in FORMATS:
+        from .raw_texture import export_dds
+        return export_dds(cpu,gpu)
     width,height=(size&8191)+1,((size>>13)&8191)+1
-    if a&3!=2 or fmt not in FORMATS or (dim>>9)&3!=1 or size>>26 or b&0x400 or width%4 or height%4 or (dim&0x800 and min(width,height)<=16):raise ValueError(f'Unsupported Xbox base texture layout/format {fmt}')
+    if a&3!=2 or fmt not in FORMATS or (dim>>9)&3!=1 or size>>26 or b&0x400:raise ValueError(f'Unsupported Xbox base texture layout/format {fmt}')
+    packed=bool(dim&0x800) and (min(width,height)-1).bit_length()<=4;px=4 if packed and (width-1).bit_length()<=(height-1).bit_length() else 0;py=4 if packed and not px else 0
     source=cpu if gpu is None else gpu
     start=(0x6c+struct.unpack_from('>i',cpu,0x6c)[0]-1) if gpu is None else struct.unpack_from('>I',cpu,0x6c)[0]-1
     if base is not None:start=base
@@ -87,10 +106,11 @@ def xbox_dds(cpu,gpu=None,base=None):
     fourcc,bpp=FORMATS[fmt];out=bytearray();endian=(b>>6)&3
     for y in range((height+3)//4):
         for x in range((width+3)//4):
-            offset=tiled_offset(x,y,pitch,bpp.bit_length()-1) if a>>31 else (y*pitch+x)*bpp
+            offset=tiled_offset(x+px,y+py,pitch,bpp.bit_length()-1) if a>>31 else ((y+py)*pitch+x+px)*bpp
             if offset+bpp>length:raise ValueError('Tiled address exceeds texture payload')
             block=source[start+offset:start+offset+bpp]
             out.extend(block[i^(0,1,3,2)[endian]] for i in range(bpp))
     header=bytearray(128);header[:4]=b'DDS ';struct.pack_into('<7I',header,4,124,0x81007,height,width,len(out),0,1)
     struct.pack_into('<II4s',header,76,32,4,fourcc);struct.pack_into('<I',header,108,0x1000)
+    if packed:header[32:36]=b'XPAK'
     return bytes(header)+out

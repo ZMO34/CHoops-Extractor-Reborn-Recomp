@@ -9,6 +9,9 @@ from .workspace import sha
 def fields(table):
     result=list(STRINGS.get(table,{}))
     if table=='players':result+=['jersey_number','height_inches','position_code',*FIELDS,*[f'rating_{i+1:02d}' for i in range(30)]]
+    if table=='conferences':
+        from .conference_history import FIELDS as HISTORY
+        result+=list(HISTORY)
     return result
 
 
@@ -58,5 +61,13 @@ def apply(model,changes,selected_fields=None):
             if selected_fields is not None and field not in selected_fields:continue
             if value(model.row(table,index),field)!=change['before']:raise ValueError('Roster changed since CSV review')
             if field in STRINGS.get(table,{}):model.set_string(table,index,field,change['after'])
+            elif table=='conferences':
+                from .conference_history import set_value
+                set_value(model,index,field,change['after'])
             elif field.startswith('rating_'):model.set_rating(index,int(field[7:])-1,change['after'])
             else:model.set_player(index,field,change['after'])
+        from .roster import Roster
+        checked=Roster(model.data)
+        for change in changes:
+            if selected_fields is not None and change['field'] not in selected_fields:continue
+            if change['field'] in ('redshirt_code','redshirt_used_code') and checked.row(change['table'],change['index'])[change['field']]!=change['after']:raise ValueError('CSV requests incompatible active/used redshirt states')

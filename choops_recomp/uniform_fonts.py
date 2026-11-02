@@ -26,7 +26,7 @@ def layout(blocks):
     cpu,gpu=blocks
     if struct.unpack_from('>I',cpu,8)[0]!=0x24820002 or struct.unpack_from('>I',cpu,0x6c)[0]!=1:raise ValueError('Unsupported Xbox font descriptor')
     dimension=struct.unpack_from('>I',cpu,0x60)[0];width,height=dimension>>16,dimension&65535;palette=struct.unpack_from('>I',cpu,0x68)[0]-1
-    if (width,height) not in ((1024,32),(1024,64),(2048,32)) or palette+1024!=len(gpu):raise ValueError('Invalid Xbox font dimensions/palette')
+    if not all(0<v<=8192 and not v&(v-1) for v in (width,height)) or palette+1024!=len(gpu):raise ValueError('Invalid Xbox indexed dimensions/palette')
     levels=[];offset=0;w,h=width,height
     while True:
         levels.append((offset,w,h));offset+=w*h

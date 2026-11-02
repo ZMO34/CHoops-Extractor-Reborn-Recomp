@@ -36,7 +36,7 @@ def main():
     target=Path(__file__).resolve().parents[2]/'choops_recomp/data/xbox_player_fields.json'
     if a.extend:
         existing=json.loads(target.read_text());merged={f['key']:f for f in existing['fields']};merged.update({f['key']:f for f in fields});fields=list(merged.values());ratings=existing['ratings']
-        if len(fields)!=33:raise ValueError('Expected all 33 native player appearance properties')
-    if len(fields) not in (21,33) or len(ratings)!=30 or [r['offset'] for r in ratings]!=list(range(60,120,2)):raise ValueError('Incomplete Xbox field profile')
-    target.write_text(json.dumps(dict(platform='xbox360',version=1,anchor_bias=16,fields=fields,ratings=ratings),indent=2)+'\n');print(f'Promoted {len(fields)} properties and 30 rating captions from Xbox evidence; {sum(bool(f.get("choices")) for f in fields)} native option lists')
+        if len(fields) not in (33,42,46):raise ValueError('Expected the 33 appearance properties plus reviewed native extensions')
+    if len(fields) not in (21,33,42,46) or len(ratings)!=30 or [r['offset'] for r in ratings]!=list(range(60,120,2)):raise ValueError('Incomplete Xbox field profile')
+    target.write_text(json.dumps(dict(platform='xbox360',version=2 if len(fields)>33 else 1,anchor_bias=16,fields=fields,ratings=ratings),indent=2)+'\n',encoding='utf-8');print(f'Promoted {len(fields)} properties and 30 rating captions from Xbox evidence; {sum(bool(f.get("choices")) for f in fields)} native option lists')
 if __name__=='__main__':main()

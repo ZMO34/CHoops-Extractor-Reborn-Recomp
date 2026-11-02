@@ -120,7 +120,8 @@ class Workspace:
                 self.resources.append(resource);self._by_key[resource.key]=resource
             if progress and n%50==0:progress(n,len(self.manifest['entries']),folder.name)
         from .cdf import records
-        for bank,(entry,layout) in self.banks.items():
+        for paired_index,(bank,(entry,layout)) in enumerate(self.banks.items()):
+            if progress and paired_index%100==0:progress(paired_index,len(self.banks),'Checking paired resources: '+bank)
             if 'blocks' in layout or 'loose_segments' in layout:continue
             path=self.safe(entry['folder']+'/payload.dat')
             with path.open('rb') as stream:prefix=stream.read(4)
@@ -151,6 +152,7 @@ class Workspace:
                 offsets=[b.u32(92+i*8) for i in range(count+1)]
                 if offsets!=sorted(offsets) or offsets[-1]>data_size:raise ValueError('Stream extents exceed bank')
                 for i in range(count):
+                    if progress and i%256==0:progress(i,count,'Indexing audio: '+name)
                     seconds=struct.unpack_from('>f',data,96+i*8)[0];size=offsets[i+1]-offsets[i]
                     if not math.isfinite(seconds) or not seconds>0 or not size or size%2048:raise ValueError('Unsupported Xbox stream duration/packet extent')
                     record=dict(resource.record,stream=i,stream_bank=name,playback_format=fmt,samples=round(seconds*rate),sample_rate=rate,folder=resource.record['folder']+f'/audio/track_{i:05d}')

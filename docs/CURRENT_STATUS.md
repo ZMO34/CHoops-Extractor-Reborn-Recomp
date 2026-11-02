@@ -12,7 +12,7 @@ distinguished from released functionality in the parity tracker.
 
 Implemented: installed-assets indexing, standard and paired resource discovery,
 Xbox DDS previews/replacement, textured scene preview with instance transforms,
-Xbox roster names/basic fields/palettes/uniform routing, 33 native player
+Xbox roster names/basic fields/palettes/uniform routing, 46 native player
 properties, 30 named ratings, undo/redo, and XMA2 WAV export/native PCM imports.
 Licensed music and band/fight songs have separate Audio views. All 87 jukebox
 title/index/category mappings were recovered from Xbox native tables and matched
@@ -21,8 +21,7 @@ to Xbox localization IDs. Band-bank clips retain their original numeric labels.
 Combined authored jersey/shorts and standalone shoe previews resolve Xbox cloth and uniform
 artwork by CRC identities. The embedded cloth stream descriptors are 24 bytes,
 versus 16 for GPU-backed scenes. Thirty native option lists supply appearance
-dropdowns, including hair, tattoos, post and free-throw animations. Authored number/name layers are now implemented. Footwear, eligibility and
-remaining player-class fields are still incomplete.
+dropdowns, including hair, tattoos, post and free-throw animations. Authored number/name layers are now implemented. Footwear, eligibility, class and shot tendencies are now implemented.
 
 Windows onedir packaging passes empty and installed-assets startup checks. The
 build excludes an unrelated Poppler ICU search path that otherwise introduced
@@ -83,3 +82,39 @@ numbers and curved surnames. All 1,976 Xbox font atlas/metric pairs validate;
 exact-color indexed image import and bounded metric editing write owning files.
 Static cloth/body/material limitations and gameplay acceptance remain explicit.
 See ROSTER_RELATIONSHIPS.md and UNIFORMS.md for evidence and operation details.
+
+## Player, history and texture update
+
+The Xbox player profile now exposes 46 properties plus 30 ratings: class,
+scholarship, redshirt status/used, jumper, four footwear controls and four shot
+tendencies join the existing fields. Native redshirt exclusions and brand-specific
+shoe limits are enforced. Search, school/unassigned filters, numeric sorting and
+source-row mapping preserve correct player identity while editing filtered lists.
+Player shoes can be previewed using their assigned Home/Away artwork.
+
+Conference history exposes founded year, NCAA championships, NCAA Final Fours
+and previous-year bids. Changes preserve membership and all neighboring bytes.
+These big-endian scalars were checked across all 39 Xbox conference records;
+labels agree with the applicable baseline, but native UI getter bindings have
+not all been traced. Unconfirmed ordering/recency fields remain protected.
+
+Models offers combined arena/floor, arena-only and floor-only previews, preserving
+authored coordinates and separate material identities. Textures in either owning
+resource can be exported/replaced from the combined view. Runtime lighting,
+crowds and cloth simulation are outside this authored preview.
+
+All 16,093 installed TXTR descriptors are recognized: 12,016 ordinary BC,
+one packed BC base, 1,044 raw 2D, 11 raw cubemaps and 3,021 indexed textures.
+Added L8, RGB565, RGBA8, RG8, RG16F and RGBA16F export/import, face previews,
+and indexed artwork including team numbers. Raw DDS preserves native channel
+precision; PNG is a display-range edit. Indexed PNG requires at most 256 exact
+colors. Unrepresentable channel changes are rejected rather than quantized.
+
+Non-BC and packed-base imports update only loose component base pixels at native
+dimensions, preserving other mip storage and padding. Indexed edits use the
+verified palette/mip writer. No archive/chunk rebuilding is involved. Native GPU
+DDS substitution/upscaling remains BC1–BC5; raw upscaling and full raw mip-chain
+replacement are not implemented. Unknown future formats are rejected.
+
+Loading is cancellable; interrupted workers do not publish stale results.
+Full parity and gameplay certification are not claimed.

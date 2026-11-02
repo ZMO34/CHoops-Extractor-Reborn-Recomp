@@ -15,7 +15,7 @@ from choops_recomp.dds import image
 
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--assets',required=True);p.add_argument('--resource',default='s000.iff/9');p.add_argument('--uniform',type=int);p.add_argument('--number',type=int);p.add_argument('--surname',default='');p.add_argument('--yaw',type=float,default=30);p.add_argument('--shoe');p.add_argument('--expect-textured',action='store_true');p.add_argument('--output',required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--assets',required=True);p.add_argument('--resource',default='s000.iff/9');p.add_argument('--arena',type=int);p.add_argument('--arena-mode',default='combined');p.add_argument('--uniform',type=int);p.add_argument('--number',type=int);p.add_argument('--surname',default='');p.add_argument('--yaw',type=float,default=30);p.add_argument('--shoe');p.add_argument('--expect-textured',action='store_true');p.add_argument('--output',required=True);a=p.parse_args()
     app=QApplication([]);fmt=QSurfaceFormat();fmt.setVersion(2,0);fmt.setDepthBufferSize(24)
     context=QOpenGLContext();context.setFormat(fmt)
     if not context.create():raise RuntimeError('Native OpenGL context unavailable')
@@ -29,6 +29,9 @@ def main():
     if a.shoe:
         from choops_recomp.shoe_preview import preview as shoe_preview
         result=shoe_preview(w,a.shoe);images=result['images']
+    elif a.arena is not None:
+        from choops_recomp.arena_preview import preview as arena_preview
+        result=arena_preview(w,a.arena,a.arena_mode);images=result['images']
     elif a.uniform is not None:
         from choops_recomp.roster import Roster
         from choops_recomp.uniforms import rows

@@ -31,6 +31,11 @@ def register(resource,source,path,kind):
 
 def save_scene_texture(resource,index,payload):
     original=next(t['dds'] for t in scene.textures(resource.blocks()) if t['index']==index and 'dds' in t)
+    if 'raw_format' in dds.info(original) or dds.info(original).get('direct_component'):
+        from types import SimpleNamespace
+        from .raw_texture import save_dds,save_bc_base
+        blocks=resource.blocks();header=next(t['header_offset'] for t in scene.textures(blocks) if t['index']==index);proxy=SimpleNamespace(blocks=lambda:[blocks[0][header:header+224],blocks[1]],component_path=resource.component_path,workspace=resource.workspace)
+        return (save_dds if 'raw_format' in dds.info(original) else save_bc_base)(proxy,payload)
     resource.workspace.require('native_dds_formats',next(fmt for fmt,(code,size) in dds.FORMATS.items() if code==original[84:88]))
     folder=resource.folder;folder.mkdir(parents=True,exist_ok=True);path=folder/f'texture_{index:04d}.dds'
     if not path.exists():atomic_write(path,original)
@@ -39,6 +44,9 @@ def save_scene_texture(resource,index,payload):
 
 def save_texture(resource,payload):
     blocks=resource.blocks();original=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None)
+    if 'raw_format' in dds.info(original) or dds.info(original).get('direct_component'):
+        from .raw_texture import save_dds,save_bc_base
+        return (save_dds if 'raw_format' in dds.info(original) else save_bc_base)(resource,payload)
     resource.workspace.require('native_dds_formats',next(fmt for fmt,(code,size) in dds.FORMATS.items() if code==original[84:88]))
     folder=resource.folder;folder.mkdir(parents=True,exist_ok=True);path=folder/'texture.dds'
     if not path.exists():atomic_write(path,original)

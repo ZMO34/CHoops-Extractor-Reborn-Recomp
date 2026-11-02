@@ -87,13 +87,16 @@ def test_instance_table_rejects_nonhomogeneous_matrix():
 
 @pytest.mark.parametrize('field',list(FIELDS))
 def test_player_property_keeps_all_other_properties(field):
-    model=Roster(roster_bytes());before=dict(model.rows['players'][0]);spec=FIELDS[field]
+    model=Roster(roster_bytes())
+    if field=='shoe_style_code':model.set_player(0,'shoe_brand_code',4)
+    elif field in ('home_shoe_color_code','away_shoe_color_code'):model.set_player(0,'shoe_brand_code',1)
+    previous=bytes(model.data);before=dict(model.rows['players'][0]);spec=FIELDS[field]
     model.set_player(0,field,spec['maximum'])
     after=model.rows['players'][0]
     assert after[field]==spec['maximum']
     for other in FIELDS:
         if other!=field:assert after[other]==before[other]
-    model.undo();assert model.data==bytearray(roster_bytes())
+    model.undo();assert bytes(model.data)==previous
 
 
 def test_xbox_weight_and_handedness_use_native_masks():

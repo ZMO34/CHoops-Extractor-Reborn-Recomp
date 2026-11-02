@@ -31,6 +31,9 @@ class Roster:
                     row.update(jersey_number=self.data[off+0x1b],height_inches=self.data[off+0x3a],position_code=self.data[off+0x3b],ratings=[b.u16(off+0x3c+j*2)/100 for j in range(30)])
                     for key,field in FIELDS.items():row[key]=(int.from_bytes(b.take(off+field['offset'],field['size']),'big')>>field['shift'])&((1<<field['bits'])-1)
                 if table=='teams':row['palette']=[b.take(off+0x1a0+j*4,4).hex().upper() for j in range(31)]
+                if table=='conferences':
+                    from .conference_history import read
+                    row.update(read(self.data,off))
                 if table=='uniforms':
                     a,c=b.u32(off),b.u32(off+4)
                     row.update(owner=a>>22&1023,asset=a>>12&1023,variant=a>>8&7,shape=c>>27&7,unlock=a&127)
@@ -84,9 +87,15 @@ class Roster:
     def set_player(self,index,field,value):
         if field in FIELDS:
             spec=FIELDS[field]
+            if spec.get('group')=='footwear':
+                from .footwear import set_value
+                set_value(self,index,field,value);return
             if not isinstance(value,int) or not spec['minimum']<=value<=spec['maximum']:raise ValueError('Player value outside Xbox menu range')
             changed=bytearray(self.data);offset=self.row('players',index)['offset']+spec['offset'];size=spec['size'];word=int.from_bytes(changed[offset:offset+size],'big');mask=((1<<spec['bits'])-1)<<spec['shift']
-            changed[offset:offset+size]=((word&~mask)|(value<<spec['shift'])).to_bytes(size,'big');self._commit(changed);return
+            changed[offset:offset+size]=((word&~mask)|(value<<spec['shift'])).to_bytes(size,'big')
+            if value and spec.get('clears_when_nonzero'):
+                other=FIELDS[spec['clears_when_nonzero']];target=self.row('players',index)['offset']+other['offset'];previous=int.from_bytes(changed[target:target+other['size']],'big');clear=((1<<other['bits'])-1)<<other['shift'];changed[target:target+other['size']]=(previous&~clear).to_bytes(other['size'],'big')
+            self._commit(changed);return
         fields={'jersey_number':(0x1b,0,100),'height_inches':(0x3a,36,100),'position_code':(0x3b,0,4)}
         if field not in fields:raise ValueError('Unsupported Xbox player field')
         delta,lo,hi=fields[field]

@@ -53,3 +53,11 @@ For an automated packaged-editor check, set `QT_QPA_PLATFORM=offscreen` and run
 `CHoops-Recomp-Studio.exe --smoke --smoke-dialogs --assets GAME/assets --report
 report.json`. It constructs the new dialogs and decodes an indexed atlas without
 showing a desktop window, changing assets or launching a game.
+
+Texture corpus audit (read-only):
+```powershell
+.venv/Scripts/python.exe tools/texture_layout_audit.py --assets GAME/assets --output output/texture-audit.json --pixels
+.venv/Scripts/python.exe tools/render_smoke.py --assets GAME/assets --arena 0 --arena-mode combined --expect-textured --output output/arena.png
+```
+Player fields and conference-history scalars share GUI, roster CSV and CLI
+writers. See `roster-set --help`; selected CSV changes form one undoable edit.

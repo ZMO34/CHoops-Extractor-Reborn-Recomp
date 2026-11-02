@@ -217,6 +217,7 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
                 cpu=(temp/components[0]['path']).read_bytes();gpu=(temp/components[1]['path']).read_bytes() if len(components)==2 else None
                 try:source_image=dds.xbox_dds((source/components[0]['path']).read_bytes(),(source/components[1]['path']).read_bytes() if len(components)==2 else None)
                 except ValueError:continue
+                if 'raw_format' in dds.info(source_image) or dds.info(source_image).get('direct_component'):continue
                 component=components[1] if gpu is not None else components[0];key=component['path']
                 if key not in seen_components:
                     try:dds.xbox_dds(cpu,gpu)

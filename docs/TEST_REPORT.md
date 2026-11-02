@@ -1,6 +1,6 @@
 # Test report
 
-- Core and Qt suite: **94 passed**, including all 33 player-property neighbor-preservation
+- Core and Qt suite: **137 passed**, including all 46 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.
 - CSV selective application and failed-transaction rollback pass.
@@ -95,3 +95,9 @@ expanded texture layouts and full feature parity are not certified by these test
   eight relationship fields, 13 school members, two uniform routes, nine artwork
   choices and an indexed font decode; no startup error. Existing shoe and court
   native GL checks also pass with the new glyph shader.
+
+Latest offline validation: 137 tests pass; the complete TXTR layout audit has zero
+failures and decodes all non-BC/indexed/packed-base pixels. This is not a
+16,093-resource write round trip. Combined native invisible GL: 84 meshes,
+50 DDS images. Private uniform creation/Home clone/alternate disable-restore
+repassed with original templates unchanged. No game or input automation used.

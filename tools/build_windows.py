@@ -3,6 +3,20 @@ import shutil,subprocess,sys
 import argparse
 import os
 from pathlib import Path
+from importlib import metadata
+
+
+def collect_licenses(package):
+    destination=package/'licenses';destination.mkdir(exist_ok=True)
+    for name in ('PySide6','PySide6-Essentials','PySide6-Addons','shiboken6','Pillow','PyInstaller'):
+        distribution=metadata.distribution(name)
+        for entry in distribution.files or []:
+            if 'licenses' not in entry.parts:continue
+            source=Path(distribution.locate_file(entry))
+            if not source.is_file():continue
+            relative=Path(*entry.parts[entry.parts.index('licenses')+1:]);target=destination/name/relative;target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
+    python_license=Path(sys.base_prefix)/'LICENSE.txt'
+    if python_license.is_file():shutil.copy2(python_license,destination/'Python-LICENSE.txt')
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--console',action='store_true');args=parser.parse_args()
@@ -15,5 +29,5 @@ def main():
     if not (decoder/'COPYING').is_file():raise ValueError('Install the pinned decoder with tools/setup_audio.py before packaging')
     shutil.copytree(decoder,package/'tools/vgmstream',dirs_exist_ok=True)
     shutil.copytree(root/'docs',package/'docs',dirs_exist_ok=True)
-    shutil.copy2(root/'README.md',package/'README.md');print(package)
+    shutil.copy2(root/'README.md',package/'README.md');collect_licenses(package);print(package)
 if __name__=='__main__':main()

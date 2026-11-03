@@ -1,5 +1,9 @@
 # Current status
 
+The v0.1 Windows preview is packaged from the feature branch. See
+`RELEASE_NOTES_v0.1.md` for setup and known limitations. Release artifacts contain
+the editor, decoder and documentation, never game assets.
+
 The editor is under implementation. Full feature parity is **not complete**.
 Loose resource files are authoritative. New imports omit packed block storage;
 startup maps component files directly and generates only compatibility metadata.

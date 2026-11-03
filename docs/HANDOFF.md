@@ -7,6 +7,10 @@ Read AGENTS.md before editing. Work in this repository; do not launch the game.
 
 # Current status
 
+The v0.1 Windows preview is packaged from the feature branch. See
+`RELEASE_NOTES_v0.1.md` for setup and known limitations. Release artifacts contain
+the editor, decoder and documentation, never game assets.
+
 The editor is under implementation. Full feature parity is **not complete**.
 Loose resource files are authoritative. New imports omit packed block storage;
 startup maps component files directly and generates only compatibility metadata.
@@ -213,6 +217,9 @@ Full parity and gameplay certification are not claimed.
 ---
 
 # Test report
+
+The v0.1 release retains the 137-test validation below. Packaging checks ZIP
+integrity, excludes game assets and writes an independent SHA-256 sidecar.
 
 - Core and Qt suite: **137 passed**, including all 46 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,

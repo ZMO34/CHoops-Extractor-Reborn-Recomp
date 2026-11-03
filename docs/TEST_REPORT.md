@@ -1,5 +1,8 @@
 # Test report
 
+The v0.1 release retains the 137-test validation below. Packaging checks ZIP
+integrity, excludes game assets and writes an independent SHA-256 sidecar.
+
 - Core and Qt suite: **137 passed**, including all 46 player-property neighbor-preservation
   cases, native weight/hand masks, roster growth/undo, uniform table preservation,
   conflicting saves, PCM truncation and jukebox categories.

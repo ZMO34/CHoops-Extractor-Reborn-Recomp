@@ -1,5 +1,9 @@
 # Commands
 
+After `tools/build_windows.py`, `tools/package_release.py` creates the Windows
+release ZIP and SHA-256 sidecar under `output/releases`. It rejects unexpected
+game/debug content and includes dependency license texts.
+
 ```powershell
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e '.[dev]'

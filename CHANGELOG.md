@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## v0.1 — 2026-11-02
+
+First Windows preview release. Includes the loose-folder editor, player and
+conference editing, uniforms, combined arena/floor previews, additional Xbox
+texture formats and separate licensed/band audio workflows. Full applicable
+parity remains in progress; see `docs/RELEASE_NOTES_v0.1.md`.
+
 - Establish the Xbox assets-folder editor and its documentation ecosystem.
 - Add observed Xbox scenes, native DDS, roster and XMA2/PCM workflows.
 - Recover jukebox categories/titles and player field masks from Xbox evidence.

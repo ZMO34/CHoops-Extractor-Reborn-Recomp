@@ -65,3 +65,14 @@ Texture corpus audit (read-only):
 ```
 Player fields and conference-history scalars share GUI, roster CSV and CLI
 writers. See `roster-set --help`; selected CSV changes form one undoable edit.
+
+# Mod project commands
+
+`python run_studio.py --cli mod --help` lists create, add-bank, review, metadata,
+attach-roster, attach-uniform, attach-extension, export and inspect commands.
+The existing direct editor commands can target `PROJECT/edit/assets` to edit
+private copies, including an attached native roster body. `inspect` checks ZIP,
+schema and integrity; export additionally invokes runtime semantic validation.
+See [complete command examples](CHMOD_AUTHORING.md#cli).
+`python tools/build_windows.py --output output/package-chmod` builds separately
+when another packaged editor is open.

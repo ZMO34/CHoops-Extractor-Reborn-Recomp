@@ -110,3 +110,29 @@ three cubemap formats and the 5x5 packed BC4 base. Unchanged DDS imports are
 byte-identical; flipping one exported payload byte changes exactly one owning
 component byte. All source resources remain unchanged. Packaged hidden startup
 and relationship/uniform/font dialog checks pass with all 3,378 banks indexed.
+
+# CHMOD authoring validation — 2026-11-08
+
+Full editor suite: **158 passed**, including **21 authoring tests**. Tests use
+synthetic Xbox importer fixtures and the actual local runtime PowerShell backend
+and native executable, with only the synthetic test runtime's expected XEX hash
+substituted in its private copy. Production Studio has no revision bypass.
+
+Verified: independent source/project bytes, changed-only payloads, reopen/version
+exports, no-clobber destinations, source mutation rejection, unknown changes,
+unsafe paths, archive declarations, canonical fixture acceptance, schema drift,
+stale project metadata, native roster rewrapping/edit preservation and missing
+uniform route rejection. Actual loader install/resolve plus native DDS prepare,
+runtime-map validation and disable return to the original source pass. Authored
+native rosters also pass actual isolated Dummy HDD installation/reuse and disable
+checks; original roster/Legacy bytes remain unchanged and existing Legacy saves
+are excluded from the mod profile. Valid cloth
+positions export; topology changes reject. Mixed asset/PE declarations pass
+without loading the synthetic DLL. Offscreen GUI tab initialization passes.
+The separate Windows package also passes hidden startup (all five tabs, no error)
+and packaged CLI inspection of the synthetic texture `.chmod`.
+
+Not claimed: in-game rendering, hook execution, a real compiled extension ABI
+load, retail roster/uniform acceptance, native save selection or Legacy migration.
+These require user-run acceptance. No game, live Dummy HDD save or DLL was opened.
+See [support boundaries](CHMOD_AUTHORING.md).

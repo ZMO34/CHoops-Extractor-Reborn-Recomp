@@ -9,6 +9,11 @@ from .player_fields import FIELDS
 
 
 def main(argv=None):
+    import sys
+    values=list(sys.argv[1:] if argv is None else argv)
+    if values and values[0]=='mod':
+        from .mod_cli import main as mod_main
+        return mod_main(values[1:])
     p=argparse.ArgumentParser(description='Xbox recomp assets-folder editor')
     p.add_argument('--assets',type=Path,required=True);sub=p.add_subparsers(dest='command',required=True)
     sub.add_parser('info')
@@ -37,7 +42,12 @@ def main(argv=None):
         s=sub.add_parser(command);s.add_argument('file',type=Path)
         if command=='export-csv':s.add_argument('--table',default='players')
         if command=='import-csv':s.add_argument('--fields',help='Comma-separated reviewed field keys; omitted applies all changed fields')
-    args=p.parse_args(argv);w=Workspace(args.assets)
+    args=p.parse_args(argv)
+    project_root=args.assets.resolve().parents[1]
+    if (project_root/'project.json').is_file() and args.assets.resolve()==project_root/'edit/assets':
+        from .mod_project import ModProject
+        w=ModProject(project_root).workspace()
+    else:w=Workspace(args.assets)
     if args.command=='info':print(json.dumps(w.report(),indent=2));return 0
     if args.command in ('roster-links','assign-link','move-player','move-conference','reorder-player','uniform-edit','uniform-available','uniform-detach','uniform-clone'):
         from . import relationships,uniforms

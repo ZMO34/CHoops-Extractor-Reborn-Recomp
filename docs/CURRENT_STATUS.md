@@ -1,5 +1,15 @@
 # Current status
 
+2026-11-08: Non-destructive **Mods / Mod Projects** authoring is implemented.
+Private bank copies, metadata/reopen/versioning, DDS/cloth changes, native roster
+body editing, uniform registration attachments and the catalogued DLL hook use
+the local runtime's canonical API 1.2 schema and actual validation backend.
+All **158 editor tests pass**, including 21 new authoring cases and native DDS
+preparation/disable, cloth preservation, roster rewrapping and mixed-code metadata.
+The required API 1.2 runtime changes are currently local/unpublished. Shared DDS
+owner validation still occurs at launcher preparation. No game or DLL was run.
+See [authoring support and limitations](CHMOD_AUTHORING.md).
+
 The v0.1 Windows preview is packaged from the feature branch. See
 `RELEASE_NOTES_v0.1.md` for setup and known limitations. Release artifacts contain
 the editor, decoder and documentation, never game assets.

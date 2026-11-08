@@ -8,7 +8,7 @@ from importlib import metadata
 
 def collect_licenses(package):
     destination=package/'licenses';destination.mkdir(exist_ok=True)
-    for name in ('PySide6','PySide6-Essentials','PySide6-Addons','shiboken6','Pillow','PyInstaller'):
+    for name in ('PySide6','PySide6-Essentials','PySide6-Addons','shiboken6','Pillow','PyInstaller','jsonschema','jsonschema-specifications','referencing','rpds-py','attrs'):
         distribution=metadata.distribution(name)
         for entry in distribution.files or []:
             if 'licenses' not in entry.parts:continue
@@ -19,8 +19,8 @@ def collect_licenses(package):
     if python_license.is_file():shutil.copy2(python_license,destination/'Python-LICENSE.txt')
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--console',action='store_true');args=parser.parse_args()
-    root=Path(__file__).resolve().parents[1];output=root/'output/package'
+    parser=argparse.ArgumentParser();parser.add_argument('--console',action='store_true');parser.add_argument('--output',type=Path,help='Separate package directory, e.g. while an existing editor is open');args=parser.parse_args()
+    root=Path(__file__).resolve().parents[1];output=args.output.resolve() if args.output else root/'output/package'
     # Qt uses the Windows ICU API. Unrelated Poppler environments can put an
     # incompatible same-name ICU DLL on PATH; keep those out of dependency scan.
     environment=dict(os.environ);environment['PATH']=os.pathsep.join(p for p in environment.get('PATH','').split(os.pathsep) if 'poppler' not in p.casefold())

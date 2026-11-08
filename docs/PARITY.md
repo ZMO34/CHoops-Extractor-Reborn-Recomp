@@ -77,3 +77,15 @@ replacement are not implemented. Unknown future formats are rejected.
 
 Loading is cancellable; interrupted workers do not publish stale results.
 Full parity and gameplay certification are not claimed.
+
+# CHMOD authoring addition (2026-11-08)
+
+Implemented: private standard-bank projects, source/hash tracking, reopen and
+version metadata, exact canonical schema export and runtime install/resolve
+validation, texture comparisons, source-bound cloth, native save body editing,
+paired uniform inventories and one catalogued compiled-extension attachment.
+Validated synthetically: project/texture/cloth/native wrapper/mixed PE metadata.
+Uniform registration delegates the researched runtime validator; retail linked
+roster acceptance and every in-game behavior remain unverified. General scene
+overwrites, arbitrary mesh conversion and scorebug/Legacy/menu hooks are gated.
+See [CHMOD authoring](CHMOD_AUTHORING.md); existing direct editors are retained.

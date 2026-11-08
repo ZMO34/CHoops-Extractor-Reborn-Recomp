@@ -120,3 +120,13 @@ replacement are not implemented. Unknown future formats are rejected.
 
 Loading is cancellable; interrupted workers do not publish stale results.
 Full parity and gameplay certification are not claimed.
+
+# Create and export a mod
+
+Use **Mods / Mod Projects → Create Mod**, add source banks and select **Edit
+project copies**. Save edits, review differences, then **Export .chmod**. Reopen
+the project to continue authoring; change its version for an update. The launcher
+installs/enables packages and controls priority. Native saves and compiled DLLs
+have separate attachment controls and explicit limits. The source installation
+and live saves are never modified in this workflow. Read the
+[complete authoring guide](CHMOD_AUTHORING.md) before exporting mixed content.

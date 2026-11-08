@@ -125,3 +125,18 @@ replacement are not implemented. Unknown future formats are rejected.
 
 Loading is cancellable; interrupted workers do not publish stale results.
 Full parity and gameplay certification are not claimed.
+
+# CHMOD source-bound export evidence (2026-11-08)
+
+The canonical local runtime API 1.2 schema and hook registry are embedded without
+modification in `choops_recomp/data/chmod.schema.json` and `chmod_hooks.json`.
+Studio checks these against the selected runtime, then delegates semantic/source
+checks to its actual `Read-Chmod`, `Install-Chmod`, `Resolve-Chmods` and native
+`validate-cloth`, `validate-roster`, `validate-uniform` implementations. No new
+Xbox IDs, offsets, hook points or save layouts are introduced.
+Native save edits retain their actual header and researched big-endian 32-bit
+body-length wrapper; Studio's existing Xbox roster writer edits only a private
+body. Loose ROST components are never converted to native saves. Source identity
+comes from original bank/record metadata and hashes, never replacement filenames.
+The only DLL hook is the runtime's researched `player.weight.read` ABI 1.
+Full provenance, validation levels and exclusions: [CHMOD authoring](CHMOD_AUTHORING.md).

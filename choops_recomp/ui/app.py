@@ -190,6 +190,8 @@ class Studio(QMainWindow):
         layout.addLayout(row);row=QHBoxLayout();self.roster_search=QLineEdit();self.roster_search.setPlaceholderText('Search roster fields…');row.addWidget(self.roster_search,1);self.roster_school=QComboBox();self.roster_school.addItem('All schools',None);row.addWidget(self.roster_school);self.roster_count=QLabel();row.addWidget(self.roster_count);layout.addLayout(row);self.roster_search.textChanged.connect(self.filter_roster);self.roster_school.currentIndexChanged.connect(self.filter_roster)
         self.roster_view=QTableView();split=QSplitter();split.addWidget(self.roster_view);self.player_tabs=QTabWidget();self.player_properties=QTableView();self.player_ratings=QTableView();self.player_eligibility=QTableView();self.player_footwear=QTableView();self.player_tabs.addTab(self.player_eligibility,'Eligibility');self.player_tabs.addTab(self.player_properties,'Appearance / Motion');self.player_tabs.addTab(self.player_footwear,'Footwear');self.player_tabs.addTab(self.player_ratings,'Ratings');split.addWidget(self.player_tabs);layout.addWidget(split);self.player_summary=QLabel();self.player_summary.setTextFormat(Qt.TextFormat.PlainText);layout.addWidget(self.player_summary);layout.addWidget(QLabel('Xbox profile: 316-byte player rows. Unknown source bits are preserved.'));self.tabs.addTab(roster_page,'Roster')
         self.statusBar().showMessage('Open the recomp game’s assets folder. No game is launched by this editor.')
+        from .mod_projects import ModProjects
+        self.mod_projects=ModProjects(self);self.tabs.addTab(self.mod_projects,'Mods / Mod Projects')
         self.roster_view.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows);self.roster_view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection);self.copied_ratings=None
         self.player_properties.setItemDelegate(PlayerChoiceDelegate(self.player_properties))
         self.player_eligibility.setItemDelegate(PlayerChoiceDelegate(self.player_eligibility));self.player_footwear.setItemDelegate(PlayerChoiceDelegate(self.player_footwear))
@@ -249,10 +251,12 @@ class Studio(QMainWindow):
             self.audio_player.setSource(QUrl())
         if self.audio_preview_directory:self.audio_preview_directory.cleanup()
         event.accept()
-    def open_assets(self,path):
+    def open_assets(self,path,loader=None):
+        project=getattr(getattr(self,'mod_projects',None),'project',None)
+        if loader is None and project and Path(path).resolve()==project.edit/'assets':loader=project.workspace
         self.cancel_index();self.cancel_loading.setEnabled(True)
         self.workspace_generation+=1;generation=self.workspace_generation;self.statusBar().showMessage('Reading Xbox assets…')
-        self.index_job=self.run_job(lambda progress:Workspace(path,progress),lambda result:self.loaded(result) if generation==self.workspace_generation else None)
+        self.index_job=self.run_job(lambda progress:(loader or Workspace)(path,progress),lambda result:self.loaded(result) if generation==self.workspace_generation else None)
     def cancel_index(self):
         job=getattr(self,'index_job',None)
         if job in self.jobs:job.cancelled=True
@@ -289,7 +293,9 @@ class Studio(QMainWindow):
                 caption=' / '.join(dict.fromkeys(owners.get(uniform['owner'],[f"Owner {uniform['owner']}"])))
                 self.uniform_picker.addItem(f"{caption} • {name(uniform['asset'],uniform['variant'])}",uniform['index'])
             self.uniform_picker.completer().setFilterMode(Qt.MatchFlag.MatchContains)
-        self.statusBar().showMessage(f"Xbox • {len(workspace.banks):,} banks • {len(workspace.resources):,} resources • edit directly, then restart the recomp")
+        project=getattr(getattr(self,'mod_projects',None),'project',None)
+        mode='private mod project copies • export through Mods' if project and workspace.root==project.edit else 'direct editing • restart the recomp'
+        self.statusBar().showMessage(f"Xbox • {len(workspace.banks):,} banks • {len(workspace.resources):,} resources • {mode}")
     def change_table(self,table):
         if self.roster and table in self.roster.rows:
             from .roster_filter import RosterFilter

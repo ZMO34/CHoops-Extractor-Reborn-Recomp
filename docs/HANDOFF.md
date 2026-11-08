@@ -7,6 +7,16 @@ Read AGENTS.md before editing. Work in this repository; do not launch the game.
 
 # Current status
 
+2026-11-08: Non-destructive **Mods / Mod Projects** authoring is implemented.
+Private bank copies, metadata/reopen/versioning, DDS/cloth changes, native roster
+body editing, uniform registration attachments and the catalogued DLL hook use
+the local runtime's canonical API 1.2 schema and actual validation backend.
+All **158 editor tests pass**, including 21 new authoring cases and native DDS
+preparation/disable, cloth preservation, roster rewrapping and mixed-code metadata.
+The required API 1.2 runtime changes are currently local/unpublished. Shared DDS
+owner validation still occurs at launcher preparation. No game or DLL was run.
+See [authoring support and limitations](CHMOD_AUTHORING.md).
+
 The v0.1 Windows preview is packaged from the feature branch. See
 `RELEASE_NOTES_v0.1.md` for setup and known limitations. Release artifacts contain
 the editor, decoder and documentation, never game assets.
@@ -213,6 +223,18 @@ replacement are not implemented. Unknown future formats are rejected.
 Loading is cancellable; interrupted workers do not publish stale results.
 Full parity and gameplay certification are not claimed.
 
+# CHMOD authoring addition (2026-11-08)
+
+Implemented: private standard-bank projects, source/hash tracking, reopen and
+version metadata, exact canonical schema export and runtime install/resolve
+validation, texture comparisons, source-bound cloth, native save body editing,
+paired uniform inventories and one catalogued compiled-extension attachment.
+Validated synthetically: project/texture/cloth/native wrapper/mixed PE metadata.
+Uniform registration delegates the researched runtime validator; retail linked
+roster acceptance and every in-game behavior remain unverified. General scene
+overwrites, arbitrary mesh conversion and scorebug/Legacy/menu hooks are gated.
+See [CHMOD authoring](CHMOD_AUTHORING.md); existing direct editors are retained.
+
 
 ---
 
@@ -328,3 +350,29 @@ three cubemap formats and the 5x5 packed BC4 base. Unchanged DDS imports are
 byte-identical; flipping one exported payload byte changes exactly one owning
 component byte. All source resources remain unchanged. Packaged hidden startup
 and relationship/uniform/font dialog checks pass with all 3,378 banks indexed.
+
+# CHMOD authoring validation — 2026-11-08
+
+Full editor suite: **158 passed**, including **21 authoring tests**. Tests use
+synthetic Xbox importer fixtures and the actual local runtime PowerShell backend
+and native executable, with only the synthetic test runtime's expected XEX hash
+substituted in its private copy. Production Studio has no revision bypass.
+
+Verified: independent source/project bytes, changed-only payloads, reopen/version
+exports, no-clobber destinations, source mutation rejection, unknown changes,
+unsafe paths, archive declarations, canonical fixture acceptance, schema drift,
+stale project metadata, native roster rewrapping/edit preservation and missing
+uniform route rejection. Actual loader install/resolve plus native DDS prepare,
+runtime-map validation and disable return to the original source pass. Authored
+native rosters also pass actual isolated Dummy HDD installation/reuse and disable
+checks; original roster/Legacy bytes remain unchanged and existing Legacy saves
+are excluded from the mod profile. Valid cloth
+positions export; topology changes reject. Mixed asset/PE declarations pass
+without loading the synthetic DLL. Offscreen GUI tab initialization passes.
+The separate Windows package also passes hidden startup (all five tabs, no error)
+and packaged CLI inspection of the synthetic texture `.chmod`.
+
+Not claimed: in-game rendering, hook execution, a real compiled extension ABI
+load, retail roster/uniform acceptance, native save selection or Legacy migration.
+These require user-run acceptance. No game, live Dummy HDD save or DLL was opened.
+See [support boundaries](CHMOD_AUTHORING.md).

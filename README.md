@@ -16,3 +16,9 @@ See `docs/CURRENT_STATUS.md`, `docs/PARITY.md` and `docs/USER_GUIDE.md` for actu
 feature support and validation limits. Source baseline:
 https://github.com/ZMO34/CHoops-Extractor-Reborn at
 `8ed6b90c8907e36dae2a33316294051a0a67db9c`.
+
+# Non-destructive CHMOD authoring
+
+The Mods / Mod Projects tab creates private source-bound projects and exports
+the runtime's canonical `.chmod` packages. See [the authoring guide](docs/CHMOD_AUTHORING.md)
+for supported payloads, CLI commands, runtime requirements and verification limits.

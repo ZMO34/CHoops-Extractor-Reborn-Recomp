@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "xex_sha256": "71e8983d1cc009e485696aad19b5fa4b4661761870e2c8972717b932c1e4be36",
+  "mod_api": "1.2.0",
+  "native_extensions_supported": true,
+  "package_hooks": [
+    {"id":"player.weight.read","guest_address":"84752968","abi":1,"exclusive":true,"status":"Researched","original":"__imp__sub_84752968","dispatch":"strong generated-symbol override","argument":"opaque uint32 guest player anchor; original uint32 pounds","result":"uint32 pounds 100..400; invalid preserves original","lifecycle":"loaded before guest Resume; synchronous; retained until process exit","coverage":"symbolic direct calls and registry references; excludes raw field reads","in_game_observation":null}
+  ],
+  "compiled_diagnostics": [
+    {"guest_address":"84DCB314","host_callback":"Ch2k8BeforeSwap","purpose":"frame timing probe","dynamic_package_registration":false},
+    {"guest_address":"84DCB318","host_callback":"Ch2k8AfterSwap","purpose":"frame timing probe","dynamic_package_registration":false}
+  ],
+  "blocker":"Other gameplay, Legacy, menu and scorebug hook contracts remain unverified. Getter compilation is not gameplay verification."
+}

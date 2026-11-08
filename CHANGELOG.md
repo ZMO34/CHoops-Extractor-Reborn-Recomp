@@ -72,3 +72,16 @@ replacement are not implemented. Unknown future formats are rejected.
 
 Loading is cancellable; interrupted workers do not publish stale results.
 Full parity and gameplay certification are not claimed.
+
+# 2026-11-08 — CHMOD authoring
+
+- Add a non-destructive Mods / Mod Projects workspace and shared CLI backend.
+- Export canonical API 1.2 `.chmod` ZIPs with changed-resource/source identities,
+  schema validation, actual runtime semantic checks and archive revalidation.
+- Reuse native roster editors on private validated save bodies; retain original
+  headers and rewrap/revalidate. Gate unsupported saves and loose ROST conversion.
+- Package validated cloth positions, native roster-linked uniform inventories
+  and the single catalogued compiled DLL hook; retain launcher code permission.
+- Preserve direct editing; add source/replacement texture comparison and precise
+  validation status. Add 21 authoring tests; full editor suite passes 158 tests.
+- Allow a separate Windows build output while an existing editor is open.

@@ -89,3 +89,9 @@ Uniform registration delegates the researched runtime validator; retail linked
 roster acceptance and every in-game behavior remain unverified. General scene
 overwrites, arbitrary mesh conversion and scorebug/Legacy/menu hooks are gated.
 See [CHMOD authoring](CHMOD_AUTHORING.md); existing direct editors are retained.
+
+ABI 2 SDK infrastructure: implemented C ABI/C++ wrappers, capability negotiation,
+ordered callbacks, before/after, exclusive replacement, original invocation,
+borrowed player handles and checked weight access. Host lifecycle and two Xbox
+property adapters are compiled in the recomp; unresearched domains remain absent.
+No gameplay parity or patch parity is asserted. ABI 1 remains compatible.

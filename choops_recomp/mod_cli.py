@@ -15,7 +15,9 @@ def main(argv=None):
         if name=='add-bank':s.add_argument('bank')
         if name=='export':s.add_argument('output',type=Path);s.add_argument('--dependency',action='append',default=[],type=Path)
         if name=='attach-roster':s.add_argument('payload',type=Path);s.add_argument('header',type=Path)
-        if name=='attach-extension':s.add_argument('dll',type=Path)
+        if name=='attach-extension':
+            s.add_argument('dll',type=Path);s.add_argument('--abi',type=int,choices=(1,2),default=1)
+            s.add_argument('--capability',action='append',default=[]);s.add_argument('--replacement',action='append',default=[])
         if name=='attach-uniform':s.add_argument('folder',type=Path);s.add_argument('template_hash',type=lambda s:int(s,0))
         if name=='metadata':s.add_argument('json_file',type=Path,help='Project manifest metadata; content generated on export')
     s=sub.add_parser('inspect');s.add_argument('archive',type=Path)
@@ -27,7 +29,7 @@ def main(argv=None):
     elif a.command=='review':print(json.dumps(project.review(),indent=2))
     elif a.command=='export':print(json.dumps(project.export(a.output,a.dependency),indent=2))
     elif a.command=='attach-roster':project.attach_roster(a.payload,a.header)
-    elif a.command=='attach-extension':project.attach_extension(a.dll)
+    elif a.command=='attach-extension':project.attach_extension(a.dll,abi=a.abi,capabilities=a.capability,replacements=a.replacement)
     elif a.command=='attach-uniform':project.attach_uniform(a.folder,a.template_hash)
     elif a.command=='metadata':
         from .mod_project import read_json

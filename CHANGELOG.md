@@ -85,3 +85,12 @@ Full parity and gameplay certification are not claimed.
 - Preserve direct editing; add source/replacement texture comparison and precise
   validation status. Add 21 authoring tests; full editor suite passes 158 tests.
 - Allow a separate Windows build output while an existing editor is open.
+
+## 2026-11-08 — public C++ extension SDK
+
+- Host versioned ABI 2 headers/wrappers, hook inventory and neutral CMake examples.
+- Include the SDK in Windows distribution and support capability-driven ABI 2
+  attachment/export through the existing Studio source backend/CLI.
+- Preserve ABI 1 authoring; publish precise initialization, callback, persistence,
+  shutdown and recovery limits. Recomp adapters and Ghidra evidence stay in recomp.
+- Compilation only; no tests, game execution or save modifications performed.

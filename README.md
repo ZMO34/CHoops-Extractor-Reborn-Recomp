@@ -22,3 +22,8 @@ https://github.com/ZMO34/CHoops-Extractor-Reborn at
 The Mods / Mod Projects tab creates private source-bound projects and exports
 the runtime's canonical `.chmod` packages. See [the authoring guide](docs/CHMOD_AUTHORING.md)
 for supported payloads, CLI commands, runtime requirements and verification limits.
+
+The public C++ extension SDK is hosted in [sdk/](sdk/README.md), including ABI2,
+C++ wrappers, neutral examples and build/package instructions. Native callbacks
+require a matching API1.3 recomp and explicit launcher opt-in. Current adapters
+are researched/compiled, not in-game verified. ABI1 authoring remains compatible.

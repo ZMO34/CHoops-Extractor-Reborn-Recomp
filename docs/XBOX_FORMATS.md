@@ -140,3 +140,14 @@ body. Loose ROST components are never converted to native saves. Source identity
 comes from original bank/record metadata and hashes, never replacement filenames.
 The only DLL hook is the runtime's researched `player.weight.read` ABI 1.
 Full provenance, validation levels and exclusions: [CHMOD authoring](CHMOD_AUTHORING.md).
+
+## Extension SDK research boundary
+
+SDK ABI 2 maps only Xbox weight getter 84752968 and setter848425D8 to semantic
+callback-scoped interfaces. PPC extraction/insertion and Studio field records agree;
+Ghidra read-only disassembly and generated function maps are preserved in the
+recomp docs/research/hooks. Host ready/stopping are not guest save lifecycle.
+Getter consumers may indirectly persist results; setter modifies a real packed
+field. No existing Legacy migration, raw memory interface or gameplay claim is
+introduced. Full contracts and available operations are in sdk/hooks.json and
+sdk/CONTRACTS.md. No current ABI 2 capability is in-game verified.

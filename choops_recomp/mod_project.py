@@ -218,15 +218,28 @@ class ModProject:
         state=copy.deepcopy(self.state);state['manifest']['roster']=dict(file='rosters/Roster.ROS',sha256=sha(data),header='rosters/Roster.ROS.header',header_sha256=sha(head));state['native_body_sha256']=sha(body)
         self._commit_attachment(changes,state)
 
-    def attach_extension(self, payload, hook='player.weight.read'):
+    def attach_extension(self, payload, hook='player.weight.read', abi=1, capabilities=None, replacements=None):
         registry=read_json(DATA/'chmod_hooks.json')
         specs=[h for h in registry['package_hooks'] if h['id']==hook]
-        if len(specs)!=1: raise ValueError('Hook is unsupported; scorebug/menu/Legacy APIs are not exposed')
+        if abi==1:
+            if len(specs)!=1 or hook!='player.weight.read': raise ValueError('ABI 1 supports only the legacy weight-read contract')
+        elif abi==2:
+            capabilities=list(capabilities or []);replacements=list(replacements or [])
+            if not capabilities or len(capabilities)!=len(set(capabilities)) or any(c not in registry['capabilities'] for c in capabilities):raise ValueError('Choose supported, unique ABI 2 capabilities from sdk/hooks.json')
+            replaceable={h['id'] for h in registry['package_hooks'] if 'replace' in h['operations']}
+            if len(replacements)!=len(set(replacements)) or any(r not in replaceable or 'hook.'+r not in capabilities for r in replacements):raise ValueError('Replacement claim requires a supported hook capability')
+        else:raise ValueError('Supported native extension ABIs are 1 and 2')
         if Path(payload).stat().st_size>64*1024*1024:raise ValueError('DLL exceeds 64 MiB')
         data=Path(payload).read_bytes()
         with tempfile.TemporaryDirectory(prefix='.dll-',dir=self.root) as temp:
             staged=Path(temp)/'extension.dll';staged.write_bytes(data);self.contract.dll(staged)
-        relative='code/extension.dll';state=copy.deepcopy(self.state);state['manifest']['extensions']=[dict(file=relative,sha256=sha(data),abi=specs[0]['abi'],hook=hook)]
+        relative='code/extension.dll';state=copy.deepcopy(self.state)
+        entry=dict(file=relative,sha256=sha(data),abi=abi)
+        if abi==1:entry['hook']=hook
+        else:
+            entry.update(capabilities=sorted(capabilities),replacements=sorted(replacements))
+            state['manifest']['requires']['mod_api']='1.3.0'
+        state['manifest']['extensions']=[entry]
         self._commit_attachment({safe(self.package_root,relative):data},state)
 
     def _commit_attachment(self, changes, state):
@@ -324,7 +337,11 @@ class ModProject:
         if m['assets'] or m.get('uniforms'):m['content'].append('assets')
         if m.get('roster'):m['content'].append('rosters');m['capabilities'].append('roster.expose')
         if m.get('uniforms'):m['capabilities'].append('uniform.register')
-        if m.get('extensions'):m['content'].append('code');m['capabilities'].append('hook.player.weight.read')
+        if m.get('extensions'):
+            m['content'].append('code')
+            for extension in m['extensions']:
+                m['capabilities'].extend(extension['capabilities'] if extension['abi']==2 else ['hook.player.weight.read'])
+            m['capabilities']=sorted(set(m['capabilities']))
         Draft202012Validator(read_json(DATA/'chmod.schema.json')).validate(m)
         write_json(destination/'mod.json',m)
         return m

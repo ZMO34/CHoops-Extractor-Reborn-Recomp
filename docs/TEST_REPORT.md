@@ -136,3 +136,11 @@ Not claimed: in-game rendering, hook execution, a real compiled extension ABI
 load, retail roster/uniform acceptance, native save selection or Legacy migration.
 These require user-run acceptance. No game, live Dummy HDD save or DLL was opened.
 See [support boundaries](CHMOD_AUTHORING.md).
+
+## ABI 2 SDK compilation boundary (2026-11-08)
+
+Three neutral DLLs and the updated runtime compiled with Windows x64 Clang.
+Synthetic framework/linkage test executables compiled but were NOT RUN. Python
+package/metadata and Studio attachment test cases were prepared, not executed.
+No in-game or structural-test validation is claimed. Ghidra static disassembly is
+research evidence only. See sdk/ACCEPTANCE.md for remote verification.

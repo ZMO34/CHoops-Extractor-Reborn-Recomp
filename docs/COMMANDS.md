@@ -76,3 +76,12 @@ schema and integrity; export additionally invokes runtime semantic validation.
 See [complete command examples](CHMOD_AUTHORING.md#cli).
 `python tools/build_windows.py --output output/package-chmod` builds separately
 when another packaged editor is open.
+
+ABI 2 attachment example (source CLI; never executes the DLL):
+
+```powershell
+python -m choops_recomp mod attach-extension C:/mods/project C:/dev/my_mod.dll --abi 2 --capability hook.player.weight.read --capability lifecycle.runtime.ready --replacement player.weight.read
+```
+
+See sdk/README.md for CMake and .chmod packaging. Use a matching API 1.3 runtime;
+older API 1.2 runtime snapshots will intentionally reject the new contract.

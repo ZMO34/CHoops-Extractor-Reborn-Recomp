@@ -29,5 +29,6 @@ def main():
     if not (decoder/'COPYING').is_file():raise ValueError('Install the pinned decoder with tools/setup_audio.py before packaging')
     shutil.copytree(decoder,package/'tools/vgmstream',dirs_exist_ok=True)
     shutil.copytree(root/'docs',package/'docs',dirs_exist_ok=True)
+    shutil.copytree(root/'sdk',package/'sdk',dirs_exist_ok=True)
     shutil.copy2(root/'README.md',package/'README.md');collect_licenses(package);print(package)
 if __name__=='__main__':main()

@@ -132,3 +132,19 @@ replacement are not implemented. Unknown future formats are rejected.
 
 Loading is cancellable; interrupted workers do not publish stale results.
 Full parity and gameplay certification are not claimed.
+
+## Typed C++ extension SDK (2026-11-08)
+
+The Studio repository now hosts `sdk/`: ABI 2 C headers, readable C++ wrappers,
+hook inventory, neutral examples, CMake build project, .chmod packager and author /
+adapter / remote-acceptance guides. Studio source CLI can attach ABI 2 DLLs with
+capabilities/replacement claims while retaining the ABI 1 GUI/default attachment.
+Windows packaging includes the SDK. The current installed editor received the
+SDK folder alongside it; its executable was not rebuilt in this task. ABI 2
+source CLI/export needs the matching API 1.3 runtime contract snapshot.
+
+Runtime adapters live in the recomp: weight getter/setter plus host ready/stopping
+lifecycle. Other gameplay/simulation/presentation/Legacy domains need research.
+The runtime, example DLLs and synthetic test executables compile; tests were not
+executed. No DLL, game, editor UI or user saves were exercised. Ghidra research
+was read-only and saved in the recomp. No performance improvement is claimed.

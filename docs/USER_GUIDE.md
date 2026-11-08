@@ -130,3 +130,12 @@ installs/enables packages and controls priority. Native saves and compiled DLLs
 have separate attachment controls and explicit limits. The source installation
 and live saves are never modified in this workflow. Read the
 [complete authoring guide](CHMOD_AUTHORING.md) before exporting mixed content.
+
+## C++ native extensions
+
+The SDK is included at `sdk/` and hosted in this repository. Start with sdk/README.md
+and sdk/AUTHORING.md. Building an extension needs developer tools; installing a
+.chmod needs only the recomp launcher. DLLs are unsandboxed and require explicit
+launcher opt-in. Studio exports never load them. Use the source CLI's ABI 2
+attachment options for capability-driven DLLs; the existing GUI/default remains
+compatible ABI 1. No new Studio authoring UI is implemented here.

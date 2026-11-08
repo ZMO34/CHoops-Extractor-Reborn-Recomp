@@ -121,3 +121,9 @@ to a complete local runtime checkout to run the integration cases. They create
 an isolated runtime backend with only the expected XEX hash changed to the
 synthetic fixture identity; production Studio has no revision-bypass option.
 The synthetic DDS example in that runtime is checked by Studio's archive reader.
+
+API1.3 / ABI2 SDK authoring is documented in sdk/AUTHORING.md and included in
+Windows packaging. Use source CLI capability/replacement options for ABI2;
+existing GUI/default extension attachment remains ABI1. Runtime source snapshot
+must match the updated canonical schema and inventory. SDK builds/exports do not
+execute game code. Tests and gameplay acceptance remain pending by user request.

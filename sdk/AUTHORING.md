@@ -54,3 +54,7 @@ field consumer. A .chmod cannot invent a hook ID or turn a PPC address into an
 x64 patch site. Future game/simulation/scheduling/UI domains are research targets,
 not current SDK features. A new adapter may require changed codegen boundaries or
 call lowering; generation must preserve original bodies and symbolic interception.
+
+Native Presentation Button Style is available through a new capability with the
+existing ABI 2 host. See [contract, build and remote acceptance](BUTTON_STYLE.md).
+Its source consumer is an actual mod; in-game behavior remains unverified.

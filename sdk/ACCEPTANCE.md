@@ -52,3 +52,7 @@ Use disposable profiles and preserve user files before your own runtime checks.
 
 Record revision, package digests, machine, observed behavior and failures. A DLL
 compilation or synthetic fixture result is not gameplay or performance evidence.
+
+Native Presentation Button Style is available through a new capability with the
+existing ABI 2 host. See [contract, build and remote acceptance](BUTTON_STYLE.md).
+Its source consumer is an actual mod; in-game behavior remains unverified.

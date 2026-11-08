@@ -156,6 +156,22 @@ The runtime, example DLLs and synthetic test executables compile; tests were not
 executed. No DLL, game, editor UI or user saves were exercised. Ghidra research
 was read-only and saved in the recomp. No performance improvement is claimed.
 
+## SDK Button Style extension (2026-11-08)
+
+The hosted SDK now includes typed `presentation.button_style` hook 5, its readable
+C++ DLL consumer, and `sdk/package_button_style.py` for a mixed DLL + conditional
+DDS `.chmod`. ABI 2 host layout is unchanged; capability negotiation rejects older
+runtimes. The native Options/Presentation adapter and live D3D12 selection are
+implemented and compiled in the recomp. This is a narrow researched Xbox adapter,
+not arbitrary UI construction. Source evidence and callback/ownership contracts:
+[sdk/BUTTON_STYLE.md](../sdk/BUTTON_STYLE.md). Artwork remains private.
+
+Runtime, extension and synthetic dispatch test executables compiled. No tests,
+DLLs or game were executed, and no user saves were changed in this follow-up.
+The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
+Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
+accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
 
 ---
 
@@ -256,6 +272,22 @@ ordered callbacks, before/after, exclusive replacement, original invocation,
 borrowed player handles and checked weight access. Host lifecycle and two Xbox
 property adapters are compiled in the recomp; unresearched domains remain absent.
 No gameplay parity or patch parity is asserted. ABI 1 remains compatible.
+
+## SDK Button Style extension (2026-11-08)
+
+The hosted SDK now includes typed `presentation.button_style` hook 5, its readable
+C++ DLL consumer, and `sdk/package_button_style.py` for a mixed DLL + conditional
+DDS `.chmod`. ABI 2 host layout is unchanged; capability negotiation rejects older
+runtimes. The native Options/Presentation adapter and live D3D12 selection are
+implemented and compiled in the recomp. This is a narrow researched Xbox adapter,
+not arbitrary UI construction. Source evidence and callback/ownership contracts:
+[sdk/BUTTON_STYLE.md](../sdk/BUTTON_STYLE.md). Artwork remains private.
+
+Runtime, extension and synthetic dispatch test executables compiled. No tests,
+DLLs or game were executed, and no user saves were changed in this follow-up.
+The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
+Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
+accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
 
 
 ---
@@ -406,3 +438,19 @@ Synthetic framework/linkage test executables compiled but were NOT RUN. Python
 package/metadata and Studio attachment test cases were prepared, not executed.
 No in-game or structural-test validation is claimed. Ghidra static disassembly is
 research evidence only. See sdk/ACCEPTANCE.md for remote verification.
+
+## SDK Button Style extension (2026-11-08)
+
+The hosted SDK now includes typed `presentation.button_style` hook 5, its readable
+C++ DLL consumer, and `sdk/package_button_style.py` for a mixed DLL + conditional
+DDS `.chmod`. ABI 2 host layout is unchanged; capability negotiation rejects older
+runtimes. The native Options/Presentation adapter and live D3D12 selection are
+implemented and compiled in the recomp. This is a narrow researched Xbox adapter,
+not arbitrary UI construction. Source evidence and callback/ownership contracts:
+[sdk/BUTTON_STYLE.md](../sdk/BUTTON_STYLE.md). Artwork remains private.
+
+Runtime, extension and synthetic dispatch test executables compiled. No tests,
+DLLs or game were executed, and no user saves were changed in this follow-up.
+The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
+Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
+accepts the new capability; existing GUI/default DLL attachment remains ABI 1.

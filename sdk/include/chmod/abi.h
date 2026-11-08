@@ -17,7 +17,14 @@ enum { CHMOD_OK=0, CHMOD_E_ARGUMENT=-1, CHMOD_E_VERSION=-2,
  CHMOD_E_CAPABILITY=-3, CHMOD_E_CONFLICT=-4, CHMOD_E_LIFETIME=-5,
  CHMOD_E_CALLBACK=-6, CHMOD_E_RANGE=-7, CHMOD_E_PHASE=-8, CHMOD_E_LIMIT=-9 };
 enum { CHMOD_ABI_V2=2, CHMOD_HOOK_WEIGHT_READ=1, CHMOD_HOOK_WEIGHT_WRITE=2,
- CHMOD_HOOK_RUNTIME_READY=3, CHMOD_HOOK_RUNTIME_STOPPING=4 };
+ CHMOD_HOOK_RUNTIME_READY=3, CHMOD_HOOK_RUNTIME_STOPPING=4,
+ CHMOD_HOOK_BUTTON_STYLE=5 };
+enum { CHMOD_BUTTON_STYLE_QUERY=0, CHMOD_BUTTON_STYLE_TOGGLE=1,
+ CHMOD_BUTTONS_XBOX=0, CHMOD_BUTTONS_PLAYSTATION=1 };
+/* Native Options/Presentation adapter. No game objects escape this call.
+   Args are immutable; after-transform may return only 0 or 1. */
+typedef struct ChmodButtonStyleArgs { uint32_t action, current_style; } ChmodButtonStyleArgs;
+typedef struct ChmodButtonStyleResult { uint32_t style; } ChmodButtonStyleResult;
 enum { CHMOD_BEFORE=1, CHMOD_AFTER=2, CHMOD_REPLACE=3 };
 enum { CHMOD_OBSERVE=0, CHMOD_TRANSFORM=1, CHMOD_REPLACEMENT=2 };
 enum { CHMOD_OP_BEFORE=1, CHMOD_OP_AFTER=2, CHMOD_OP_REPLACE=4,
@@ -65,6 +72,7 @@ typedef const ChmodExtensionV2* (CHMOD_CALL *ChmodQueryFnV2)(uint32_t abi);
 #ifdef __cplusplus
 }
 static_assert(sizeof(void*)==8,"CHMOD SDK requires x64");
+static_assert(sizeof(ChmodButtonStyleArgs)==8 && sizeof(ChmodButtonStyleResult)==4,"CHMOD Button Style payload ABI differs");
 static_assert(sizeof(ChmodWeightReadArgs)==8 && sizeof(ChmodWeightReadResult)==4 && sizeof(ChmodWeightWriteArgs)==16 && sizeof(ChmodHookInfo)==40,"CHMOD typed payload ABI differs");
 static_assert(sizeof(ChmodCall)==48 && sizeof(ChmodRegistrationSpec)==40,"CHMOD ABI packing differs");
 static_assert(sizeof(ChmodHostV2)==80 && sizeof(ChmodExtensionV2)==24,"CHMOD host ABI differs");

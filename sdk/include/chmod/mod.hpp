@@ -2,6 +2,8 @@
 #include "abi.h"
 #include <string_view>
 namespace chmod {
+inline const ChmodButtonStyleArgs* button_style_args(const ChmodCall* c){return c && c->hook==CHMOD_HOOK_BUTTON_STYLE && c->arguments_size==sizeof(ChmodButtonStyleArgs)?static_cast<const ChmodButtonStyleArgs*>(c->arguments):nullptr;}
+inline ChmodButtonStyleResult* button_style_result(ChmodCall* c){return c && c->hook==CHMOD_HOOK_BUTTON_STYLE && c->result_size==sizeof(ChmodButtonStyleResult)?static_cast<ChmodButtonStyleResult*>(c->result):nullptr;}
 class Host {
  const ChmodHostV2* api_{};
 public:

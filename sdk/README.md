@@ -33,3 +33,7 @@ reproducible ZIP-compatible .chmod. It never loads the DLL or accesses game save
 Use Studio's canonical contract validation before distribution. Do not include
 compiler runtime dependency DLLs as undeclared payloads; target the distributed
 runtime's CRT, and avoid additional unprovided DLL dependencies.
+
+Native Presentation Button Style is available through a new capability with the
+existing ABI 2 host. See [contract, build and remote acceptance](BUTTON_STYLE.md).
+Its source consumer is an actual mod; in-game behavior remains unverified.

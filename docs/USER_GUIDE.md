@@ -139,3 +139,19 @@ and sdk/AUTHORING.md. Building an extension needs developer tools; installing a
 launcher opt-in. Studio exports never load them. Use the source CLI's ABI 2
 attachment options for capability-driven DLLs; the existing GUI/default remains
 compatible ABI 1. No new Studio authoring UI is implemented here.
+
+## SDK Button Style extension (2026-11-08)
+
+The hosted SDK now includes typed `presentation.button_style` hook 5, its readable
+C++ DLL consumer, and `sdk/package_button_style.py` for a mixed DLL + conditional
+DDS `.chmod`. ABI 2 host layout is unchanged; capability negotiation rejects older
+runtimes. The native Options/Presentation adapter and live D3D12 selection are
+implemented and compiled in the recomp. This is a narrow researched Xbox adapter,
+not arbitrary UI construction. Source evidence and callback/ownership contracts:
+[sdk/BUTTON_STYLE.md](../sdk/BUTTON_STYLE.md). Artwork remains private.
+
+Runtime, extension and synthetic dispatch test executables compiled. No tests,
+DLLs or game were executed, and no user saves were changed in this follow-up.
+The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
+Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
+accepts the new capability; existing GUI/default DLL attachment remains ABI 1.

@@ -94,3 +94,9 @@ Full parity and gameplay certification are not claimed.
 - Preserve ABI 1 authoring; publish precise initialization, callback, persistence,
   shutdown and recovery limits. Recomp adapters and Ghidra evidence stay in recomp.
 - Compilation only; no tests, game execution or save modifications performed.
+
+## 2026-11-08 — SDK native Presentation Button Style
+
+Added typed capability/consumer/authoring packager and remote contracts while
+preserving ABI 2 layout. Runtime/DLL compilation only; tests/gameplay pending.
+No retail or supplied artwork is committed. See sdk/BUTTON_STYLE.md.

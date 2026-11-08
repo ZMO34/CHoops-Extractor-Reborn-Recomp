@@ -127,3 +127,9 @@ Windows packaging. Use source CLI capability/replacement options for ABI2;
 existing GUI/default extension attachment remains ABI1. Runtime source snapshot
 must match the updated canonical schema and inventory. SDK builds/exports do not
 execute game code. Tests and gameplay acceptance remain pending by user request.
+
+Button Style authors can build the hosted SDK example and use
+`sdk/package_button_style.py` with their two authored/provided atlases. The
+result is a normal `.chmod` for the matching capability-advertising runtime.
+See [contract and limits](../sdk/BUTTON_STYLE.md); no new Studio authoring UI
+or automatic DLL execution was added. Native row/render acceptance is pending.

@@ -125,7 +125,7 @@ Write-Output 'CHMOD_VALID'
 
 
 class ModProject:
-    def __init__(self, root):
+    def __init__(self, root, runtime=None):
         self.root = Path(root).resolve()
         self.path = safe(self.root, 'project.json')
         self.state = read_json(self.path,32*1024*1024)
@@ -133,8 +133,14 @@ class ModProject:
         self.source = Path(self.state['source']).resolve()
         if self.root.is_relative_to(self.source) or self.source.is_relative_to(self.root): raise ValueError('Source and project must be separate')
         self.edit = safe(self.root, 'edit'); self.package_root = safe(self.root, 'package')
-        self.contract = RuntimeContract(self.state['runtime'])
+        self._contract = RuntimeContract(runtime) if runtime is not None else None
         self.expected = sha(self.path.read_bytes())
+
+    @property
+    def contract(self):
+        if self._contract is None:
+            raise ValueError('Select a trusted runtime explicitly before running native validation')
+        return self._contract
 
     @classmethod
     def create(cls, destination, assets, runtime, mod_id, name, author):
@@ -157,7 +163,7 @@ class ModProject:
             if (source/'runtime_capabilities.json').is_file(): shutil.copyfile(source/'runtime_capabilities.json',stage/'edit/runtime_capabilities.json')
             state=dict(project_version=1, source=str(source), runtime=str(contract.root), description='', manifest=manifest, source_catalog_sha256=sha((source/'assets.json').read_bytes()), baseline={}, banks=[])
             write_json(stage/'project.json',state);os.rename(stage,destination)
-        return cls(destination)
+        return cls(destination, contract.root)
 
     def save(self):
         write_json(self.path,self.state,self.expected);self.expected=sha(self.path.read_bytes())
@@ -355,27 +361,36 @@ class ModProject:
 
 def validate_archive(path):
     """Bound archive reads before handing a materialized package to the runtime."""
+    with Path(path).open('rb') as stream:
+        if os.fstat(stream.fileno()).st_size>LIMIT: raise ValueError('Package limit exceeded')
+        with zipfile.ZipFile(stream) as archive:
+            return _validate_archive_entries(archive, Path(path).parent)
+
+
+def _validate_archive_entries(z, parent):
     from jsonschema import Draft202012Validator
-    with zipfile.ZipFile(path) as z:
-        entries=z.infolist();seen=set();total=0
-        if len(entries)>8192 or Path(path).stat().st_size>LIMIT: raise ValueError('Package limit exceeded')
-        for entry in entries:
-            name=entry.filename;safe(Path(path).parent,name)
-            if name.casefold() in seen: raise ValueError('Duplicate/case-colliding ZIP entry')
-            seen.add(name.casefold());total+=entry.file_size
-            mode=(entry.external_attr>>16)&0o170000
-            if mode not in (0,0o100000) or entry.external_attr & 0x400 or entry.file_size>128*1024*1024 or total>LIMIT or entry.file_size>1024*1024 and entry.file_size>200*max(1,entry.compress_size): raise ValueError('Unsafe ZIP entry/size')
-        if 'mod.json' not in z.namelist() or z.getinfo('mod.json').file_size>1024*1024:raise ValueError('Missing/oversize mod.json')
-        m=parse_json(z.read('mod.json'))
-        Draft202012Validator(read_json(DATA/'chmod.schema.json')).validate(m)
-        declared={'mod.json':None}
-        for a in m['assets']:declared[a['file']]=a['sha256']
-        if m.get('roster'):
-            r=m['roster'];declared[r['file']]=r['sha256'];declared[r['header']]=r['header_sha256']
-        for e in m.get('extensions',[]):declared[e['file']]=e['sha256']
-        for u in m.get('uniforms',[]):
-            for f in u['files']:declared[u['folder']+'/'+f['path']]=f['sha256']
-        if set(z.namelist())!=set(declared):raise ValueError('Missing or undeclared ZIP payload')
-        for name,digest in declared.items():
-            if digest and sha(z.read(name))!=digest:raise ValueError('Payload hash mismatch: '+name)
-        return m
+
+    entries=z.infolist();seen=set();total=0
+    if len(entries)>8192: raise ValueError('Package limit exceeded')
+    for entry in entries:
+        if entry.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+            raise ValueError('Unsupported ZIP compression method')
+        name=entry.filename;safe(parent,name)
+        if name.casefold() in seen: raise ValueError('Duplicate/case-colliding ZIP entry')
+        seen.add(name.casefold());total+=entry.file_size
+        mode=(entry.external_attr>>16)&0o170000
+        if mode not in (0,0o100000) or entry.external_attr & 0x400 or entry.file_size>128*1024*1024 or total>LIMIT or entry.file_size>1024*1024 and entry.file_size>200*max(1,entry.compress_size): raise ValueError('Unsafe ZIP entry/size')
+    if 'mod.json' not in z.namelist() or z.getinfo('mod.json').file_size>1024*1024:raise ValueError('Missing/oversize mod.json')
+    m=parse_json(z.read('mod.json'))
+    Draft202012Validator(read_json(DATA/'chmod.schema.json')).validate(m)
+    declared={'mod.json':None}
+    for a in m['assets']:declared[a['file']]=a['sha256']
+    if m.get('roster'):
+        r=m['roster'];declared[r['file']]=r['sha256'];declared[r['header']]=r['header_sha256']
+    for e in m.get('extensions',[]):declared[e['file']]=e['sha256']
+    for u in m.get('uniforms',[]):
+        for f in u['files']:declared[u['folder']+'/'+f['path']]=f['sha256']
+    if set(z.namelist())!=set(declared):raise ValueError('Missing or undeclared ZIP payload')
+    for name,digest in declared.items():
+        if digest and sha(z.read(name))!=digest:raise ValueError('Payload hash mismatch: '+name)
+    return m

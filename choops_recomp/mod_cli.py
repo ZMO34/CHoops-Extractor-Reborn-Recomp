@@ -12,6 +12,8 @@ def main(argv=None):
     for field in ('id','name','author'):s.add_argument('--'+field,required=True)
     for name in ('add-bank','review','export','attach-roster','attach-extension','attach-uniform','metadata'):
         s=sub.add_parser(name);s.add_argument('project',type=Path)
+        if name in ('export', 'attach-roster', 'attach-extension', 'attach-uniform'):
+            s.add_argument('--runtime', type=Path, required=True, help='Trusted local runtime installation')
         if name=='add-bank':s.add_argument('bank')
         if name=='export':s.add_argument('output',type=Path);s.add_argument('--dependency',action='append',default=[],type=Path)
         if name=='attach-roster':s.add_argument('payload',type=Path);s.add_argument('header',type=Path)
@@ -22,7 +24,7 @@ def main(argv=None):
     a=p.parse_args(argv)
     if a.command=='inspect':print(json.dumps(validate_archive(a.archive),indent=2));return 0
     if a.command=='create':ModProject.create(a.project,a.assets,a.runtime,a.id,a.name,a.author);return 0
-    project=ModProject(a.project)
+    project=ModProject(a.project, getattr(a, 'runtime', None))
     if a.command=='add-bank':project.add_bank(a.bank)
     elif a.command=='review':print(json.dumps(project.review(),indent=2))
     elif a.command=='export':print(json.dumps(project.export(a.output,a.dependency),indent=2))

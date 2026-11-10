@@ -1,5 +1,9 @@
 # Feature parity tracker
 
+## Security update
+
+The security update retains existing Xbox component and mod format coverage.
+
 The target is the released College Hoops feature set in Extractor Reborn v1.23,
 adapted to direct Xbox assets-folder editing. No percentage is claimed while
 applicable features remain incomplete. A parser alone does not complete a GUI,

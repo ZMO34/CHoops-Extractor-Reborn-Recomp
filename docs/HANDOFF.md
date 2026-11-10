@@ -7,6 +7,10 @@ Read AGENTS.md before editing. Work in this repository; do not launch the game.
 
 # Current status
 
+## Security update
+
+CI audits the resolved Python dependencies against published advisories. Native mod validation uses an explicitly selected local runtime. Stored project runtime paths are ignored.
+
 2026-11-08: Non-destructive **Mods / Mod Projects** authoring is implemented.
 Private bank copies, metadata/reopen/versioning, DDS/cloth changes, native roster
 body editing, uniform registration attachments and the catalogued DLL hook use
@@ -145,6 +149,10 @@ Full parity and gameplay certification are not claimed.
 
 # Feature parity tracker
 
+## Security update
+
+The security update retains existing Xbox component and mod format coverage.
+
 The target is the released College Hoops feature set in Extractor Reborn v1.23,
 adapted to direct Xbox assets-folder editing. No percentage is claimed while
 applicable features remain incomplete. A parser alone does not complete a GUI,
@@ -239,6 +247,10 @@ See [CHMOD authoring](CHMOD_AUTHORING.md); existing direct editors are retained.
 ---
 
 # Test report
+
+## Security update
+
+Security update on Windows with Python 3.14, PySide6 6.11.3 and Pillow 13.0.0 recorded **145 passed, 14 skipped**. pip-audit reported no known vulnerabilities for the tested Python dependency set. Native runtime integration was excluded because the available checkout has different contract snapshots.
 
 The v0.1 release retains the 137-test validation below. Packaging checks ZIP
 integrity, excludes game assets and writes an independent SHA-256 sidecar.

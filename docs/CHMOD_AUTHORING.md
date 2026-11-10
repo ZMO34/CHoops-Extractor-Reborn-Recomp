@@ -101,11 +101,11 @@ python run_studio.py --cli mod create C:/Mods/MyAuthorProject --assets D:/Game/a
 python run_studio.py --cli mod add-bank C:/Mods/MyAuthorProject existing.iff
 python run_studio.py --cli --assets C:/Mods/MyAuthorProject/edit/assets import-artwork existing.iff/0 C:/Art/replacement.png
 python run_studio.py --cli mod review C:/Mods/MyAuthorProject
-python run_studio.py --cli mod attach-roster C:/Mods/MyAuthorProject C:/Saves/Roster.ROS C:/Saves/Roster.ROS.header
-python run_studio.py --cli mod attach-uniform C:/Mods/MyAuthorProject C:/Art/ux501.iff 0x12345678
-python run_studio.py --cli mod attach-extension C:/Mods/MyAuthorProject C:/Code/extension.dll
+python run_studio.py --cli mod attach-roster C:/Mods/MyAuthorProject C:/Saves/Roster.ROS C:/Saves/Roster.ROS.header --runtime D:/Runtime
+python run_studio.py --cli mod attach-uniform C:/Mods/MyAuthorProject C:/Art/ux501.iff 0x12345678 --runtime D:/Runtime
+python run_studio.py --cli mod attach-extension C:/Mods/MyAuthorProject C:/Code/extension.dll --runtime D:/Runtime
 python run_studio.py --cli mod metadata C:/Mods/MyAuthorProject C:/Art/manifest-metadata.json
-python run_studio.py --cli mod export C:/Mods/MyAuthorProject C:/Exports/art-1.0.0.chmod --dependency C:/Runtime/mods/other.mod/1.0.0
+python run_studio.py --cli mod export C:/Mods/MyAuthorProject C:/Exports/art-1.0.0.chmod --dependency C:/Runtime/mods/other.mod/1.0.0 --runtime D:/Runtime
 python run_studio.py --cli mod inspect C:/Exports/art-1.0.0.chmod
 ```
 

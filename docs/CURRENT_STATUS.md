@@ -1,5 +1,9 @@
 # Current status
 
+## Security update
+
+CI audits the resolved Python dependencies against published advisories. Native mod validation uses an explicitly selected local runtime. Stored project runtime paths are ignored.
+
 2026-11-08: Non-destructive **Mods / Mod Projects** authoring is implemented.
 Private bank copies, metadata/reopen/versioning, DDS/cloth changes, native roster
 body editing, uniform registration attachments and the catalogued DLL hook use

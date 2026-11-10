@@ -1,5 +1,9 @@
 # Test report
 
+## Security update
+
+Security update on Windows with Python 3.14, PySide6 6.11.3 and Pillow 13.0.0 recorded **145 passed, 14 skipped**. pip-audit reported no known vulnerabilities for the tested Python dependency set. Native runtime integration was excluded because the available checkout has different contract snapshots.
+
 The v0.1 release retains the 137-test validation below. Packaging checks ZIP
 integrity, excludes game assets and writes an independent SHA-256 sidecar.
 

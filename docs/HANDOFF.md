@@ -7,6 +7,10 @@ Read AGENTS.md before editing. Work in this repository; do not launch the game.
 
 # Current status
 
+## Security update
+
+CI audits the resolved Python dependencies against published advisories.
+
 The v0.1 Windows preview is packaged from the feature branch. See
 `RELEASE_NOTES_v0.1.md` for setup and known limitations. Release artifacts contain
 the editor, decoder and documentation, never game assets.
@@ -135,6 +139,10 @@ Full parity and gameplay certification are not claimed.
 
 # Feature parity tracker
 
+## Security update
+
+The security update retains existing Xbox component and mod format coverage.
+
 The target is the released College Hoops feature set in Extractor Reborn v1.23,
 adapted to direct Xbox assets-folder editing. No percentage is claimed while
 applicable features remain incomplete. A parser alone does not complete a GUI,
@@ -217,6 +225,10 @@ Full parity and gameplay certification are not claimed.
 ---
 
 # Test report
+
+## Security update
+
+Security update on Windows with Python 3.14, PySide6 6.11.3 and Pillow 13.0.0 recorded **137 passed**. pip-audit reported no known vulnerabilities for the tested Python dependency set.
 
 The v0.1 release retains the 137-test validation below. Packaging checks ZIP
 integrity, excludes game assets and writes an independent SHA-256 sidecar.

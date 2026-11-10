@@ -1,5 +1,9 @@
 # Xbox format evidence
 
+## Security update
+
+Component decoding bounds zlib output by the declared uncompressed extent and copies only the bytes used by each H7A match.
+
 ## Roster
 
 Xbox player stride is **316 bytes**. Header-relative descriptors locate players,

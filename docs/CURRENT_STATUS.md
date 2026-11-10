@@ -1,5 +1,9 @@
 # Current status
 
+## Security update
+
+CI audits the resolved Python dependencies against published advisories.
+
 The v0.1 Windows preview is packaged from the feature branch. See
 `RELEASE_NOTES_v0.1.md` for setup and known limitations. Release artifacts contain
 the editor, decoder and documentation, never game assets.

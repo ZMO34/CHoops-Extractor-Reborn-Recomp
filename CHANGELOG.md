@@ -1,5 +1,9 @@
 # Changes
 
+## Security update
+
+Raised dependency minimums to patched releases, added dependency auditing to CI, and bounded component decompression by the declared size.
+
 ## Unreleased
 
 ## v0.1 — 2026-11-02

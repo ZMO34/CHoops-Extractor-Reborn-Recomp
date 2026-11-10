@@ -1,5 +1,9 @@
 # User guide
 
+## Security update
+
+Install updated dependencies before launching Studio.
+
 Run `run_studio.py`, then choose File â†’ Open assets folder. Select the installed
 recomp's `assets` directory beside `assets.json`. The editor never launches the
 game. Restart the game manually through its launcher after saving edits.

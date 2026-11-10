@@ -1,5 +1,9 @@
 # Changes
 
+## Security update
+
+Raised dependency minimums to patched releases, added dependency auditing to CI, and bounded component decompression by the declared size. Native mod validation uses an explicitly selected local runtime. Stored project runtime paths are ignored. CHMOD inspection accepts stored and deflated ZIP entries and checks the archive size before reading its directory.
+
 ## Unreleased
 
 ## v0.1 — 2026-11-02

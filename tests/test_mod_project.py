@@ -225,3 +225,18 @@ Write-Output $first
         assert (isolated/old.relative_to(baseline)).read_bytes()==payload
         assert not (isolated/legacy.relative_to(baseline)).exists()
     assert inventory(baseline)==before
+
+
+def test_project_metadata_cannot_select_executable_runtime(tmp_path, monkeypatch):
+    root = tmp_path / 'project'
+    root.mkdir()
+    write_json(root / 'project.json', dict(project_version=1, source=str(tmp_path / 'game'),
+                                          runtime=str(root / 'untrusted-runtime')))
+
+    def forbidden_runtime(_):
+        pytest.fail('Project metadata selected the executable runtime')
+
+    monkeypatch.setattr('choops_recomp.mod_project.RuntimeContract', forbidden_runtime)
+    project = ModProject(root)
+    with pytest.raises(ValueError, match='trusted runtime explicitly'):
+        _ = project.contract

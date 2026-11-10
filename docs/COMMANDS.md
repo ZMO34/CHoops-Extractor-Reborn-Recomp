@@ -1,5 +1,9 @@
 # Commands
 
+## Security update
+
+Run `python -m pip_audit --strict --skip-editable` after installing the Studio development dependencies and pip-audit. The CHMOD `export`, `attach-roster`, `attach-extension` and `attach-uniform` commands require `--runtime` pointing to a trusted local installation.
+
 After `tools/build_windows.py`, `tools/package_release.py` creates the Windows
 release ZIP and SHA-256 sidecar under `output/releases`. It rejects unexpected
 game/debug content and includes dependency license texts.
@@ -80,7 +84,7 @@ when another packaged editor is open.
 ABI 2 attachment example (source CLI; never executes the DLL):
 
 ```powershell
-python -m choops_recomp mod attach-extension C:/mods/project C:/dev/my_mod.dll --abi 2 --capability hook.player.weight.read --capability lifecycle.runtime.ready --replacement player.weight.read
+python -m choops_recomp mod attach-extension C:/mods/project C:/dev/my_mod.dll --abi 2 --capability hook.player.weight.read --capability lifecycle.runtime.ready --replacement player.weight.read --runtime D:/Runtime
 ```
 
 See sdk/README.md for CMake and .chmod packaging. Use a matching API 1.3 runtime;

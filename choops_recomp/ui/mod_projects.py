@@ -54,7 +54,10 @@ class ModProjects(QWidget):
     def open(self):
         if not self.studio.maybe_save():return
         path=QFileDialog.getExistingDirectory(self,'Open mod project directory')
-        if path:self.project=ModProject(path);self.refresh();self.activate()
+        if not path:return
+        runtime=QFileDialog.getExistingDirectory(self,'Select a trusted local runtime installation')
+        if not runtime:return
+        self.project=ModProject(path,runtime);self.refresh();self.activate()
 
     def activate(self):
         self.studio.cancel_index();self.studio.workspace_generation+=1

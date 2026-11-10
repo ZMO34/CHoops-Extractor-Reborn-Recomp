@@ -1,5 +1,8 @@
 # CHoops Recomp Studio
 
+The first Windows preview is **v0.1**. See
+[release notes](docs/RELEASE_NOTES_v0.1.md) for setup, features and limits.
+
 Xbox 360 College Hoops 2K8 asset editor for the native recompilation.
 Open an installed game's `assets` directory; edit resources directly and restart
 through the recomp launcher to apply changes. No archive explorer, staging layer,

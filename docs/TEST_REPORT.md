@@ -214,3 +214,7 @@ The 164-test Windows suite passed. Offline checks imported, combined, and
 separated the installed Georgia floor, shorter shorts, and button art packages.
 The Albany X world and selection banks were opened in the project browser and
 exported through the runtime resolver. In-game appearance remains unverified.
+
+## 0.2.4 collection checks
+
+The runtime suite covered nested installation, path preservation, duplicate-version rejection and resolution. The Studio suite passed 164 tests.

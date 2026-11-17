@@ -133,3 +133,7 @@ The alternate command accepts optional `--numbers WORLD.png`, `--selection-numbe
 ## Studio startup defaults
 
 The desktop executable accepts `--default-assets PATH` and `--mods PATH` for initial folder defaults. Studio remembers paths selected in the UI. The existing `--assets PATH` option opens a specific installation for that run.
+
+## Nested collections
+
+The launcher folder installer accepts a directory containing multiple child package folders. Each child requires the usual mod.json. The 512 MiB limit applies per child.

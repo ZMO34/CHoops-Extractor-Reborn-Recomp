@@ -102,7 +102,7 @@ class RuntimeContract:
     def package(self, folder, game, dependencies=None):
         # Install and resolve only in a disposable directory. AllowCode authorizes
         # metadata validation here; Resolve-Chmods never loads a DLL or saves opt-in.
-        with tempfile.TemporaryDirectory(prefix='studio-contract-') as temp:
+        with tempfile.TemporaryDirectory(prefix='.validate-', dir=Path(folder).parent) as temp:
             script = Path(temp)/'validate.ps1'
             script.write_text("""param($Backend,$Folder,$Game,$Mods,$Deps)
 $ErrorActionPreference='Stop'
@@ -486,6 +486,74 @@ class ModProject:
             self.state=old
             if target.resolve().is_relative_to(self.package_root.resolve()):shutil.rmtree(target)
             raise
+
+    def stage_scorebug_artwork(self, archive):
+        """Convert a verified PS3 bottom-bar atlas set to the Xbox named slots."""
+        from PIL import Image
+        from . import dds, raw_texture
+
+        bank = 'gamedata.iff'
+        folder = 'assets/' + bank + '/scorebug_bottombar.scne/'
+        ordered_ids = (0x1c0a45df, 0xecd26057, 0xe2a8738a, 0x4446ec65,
+                       0x149c79a7, 0x9aef92a3)
+        catalog = read_json(self.source/'scene_textures.json', 64*1024*1024)
+        owner, = (scene for scene in catalog['scenes'] if scene['bank']==1823768513 and scene['record']==55)
+        slots = {item['slot']: item for item in owner['textures']}
+        if tuple(slots[i]['id'] for i in range(6)) != ordered_ids:
+            raise ValueError('The installed scorebug slots differ from the verified Xbox layout')
+        changes = {}
+        with zipfile.ZipFile(archive) as package, tempfile.TemporaryDirectory(dir=self.root) as stage:
+            members = package.infolist()
+            if len(members) > 32:
+                raise ValueError('Expected one scorebug archive')
+            def read_member(name):
+                matches = [entry for entry in members if Path(entry.filename).name==name and not entry.is_dir()]
+                if len(matches) != 1 or matches[0].file_size > 1024*1024:
+                    raise ValueError('Missing or oversized scorebug member: '+name)
+                return package.read(matches[0])
+            wrapped = read_member('scorebug_bottombar.scne')
+            if len(wrapped) < 20 or wrapped[:4] != b'2kTl':
+                raise ValueError('Expected the PS3 scorebug scene envelope')
+            cpu_size, gpu_size = struct.unpack_from('>II', wrapped, 12)
+            if len(wrapped) != 20 + cpu_size + gpu_size or cpu_size < 40:
+                raise ValueError('Invalid scorebug scene bounds')
+            cpu = wrapped[20:20+cpu_size]
+            count, relative = struct.unpack_from('>II', cpu, 32)
+            table = 35+relative
+            if count != 6 or table+6*176 > len(cpu) or tuple(
+                struct.unpack_from('>I', cpu, table+i*176)[0] for i in range(6)
+            ) != ordered_ids:
+                raise ValueError('Unexpected PS3 scorebug slot identities')
+            for i in range(5):
+                path = slots[i]['file']
+                if not path.startswith(folder):
+                    raise ValueError('Unexpected Xbox scorebug texture path')
+                baseline = safe(self.source, path).read_bytes()
+                if sha(baseline) != slots[i]['sha256']:
+                    raise ValueError('Use a pristine Xbox scorebug template')
+                incoming = read_member(f'texture_{i}.dds')
+                image = dds.image(incoming)
+                info = dds.info(baseline)
+                if image.size != (info['width'], info['height']):
+                    raise ValueError('Scorebug texture dimensions differ')
+                if i == 0:
+                    # Xbox stores this diffuse slot as a single luminance channel.
+                    light = image.convert('L')
+                    image = Image.merge('RGBA', (light, light, light, image.getchannel('A')))
+                if 'raw_format' in info:
+                    png = Path(stage)/'slot.png'
+                    image.save(png)
+                    result = raw_texture.from_image(png, baseline)
+                else:
+                    if incoming[84:88] != baseline[84:88]:
+                        raise ValueError('Unexpected scorebug compressed texture format')
+                    result = baseline[:128] + incoming[128:len(baseline)]
+                dds.image(result)
+                changes[safe(self.edit,path)] = result
+        self.add_bank(bank)
+        state = copy.deepcopy(self.state)
+        self._commit_attachment(changes, state)
+        return len(changes)
 
     def stage_full_court(self, court, artwork):
         """Convert one full-court DDS into the project's private floor components."""

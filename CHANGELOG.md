@@ -1,5 +1,10 @@
 # Changes
 
+## 0.2.4
+
+- Import verified PS3 bottom-bar scorebug artwork into Xbox texture slots.
+- Browse nested mod collections and choose a child package to open as a Studio project.
+
 ## 0.2.3
 
 - Remember the installed assets and Mods folders.

@@ -197,6 +197,10 @@ Studio authors existing UH, UA, and routed alternate banks alongside new X/Y/Z p
 
 Studio remembers the installation and default Mods folder. Installed mod folders import into independent working projects, including named DDS and registered XYZ assets. Projects can be combined and separated by bank or content group.
 
+## 0.2.4 nested collections
+
+Studio can choose a child mod beneath a collection folder. The launcher installs and resolves each child package independently.
+
 
 ---
 
@@ -345,6 +349,10 @@ The builder generates the same verified bump and material maps for replacements 
 ## 0.2.3 mod folder round trips
 
 Mod folders preserve registered uniform pairs, named texture identities, conditional texture metadata, and supplied payloads. Combined projects require disjoint content. A separated project keeps the selected group intact. Some payloads are carried through export without an editor.
+
+## 0.2.4 collection and scorebug coverage
+
+Nested package browsing uses the Xbox package contract. The scorebug importer converts five verified artwork slots. The PlayStation scene layout and a live network selector are pending.
 
 
 ---
@@ -565,3 +573,7 @@ The 164-test Windows suite passed. Offline checks imported, combined, and
 separated the installed Georgia floor, shorter shorts, and button art packages.
 The Albany X world and selection banks were opened in the project browser and
 exported through the runtime resolver. In-game appearance remains unverified.
+
+## 0.2.4 collection checks
+
+The runtime suite covered nested installation, path preservation, duplicate-version rejection and resolution. The Studio suite passed 164 tests.

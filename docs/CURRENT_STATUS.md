@@ -189,3 +189,7 @@ Studio authors existing UH, UA, and routed alternate banks alongside new X/Y/Z p
 ## 0.2.3 mod projects
 
 Studio remembers the installation and default Mods folder. Installed mod folders import into independent working projects, including named DDS and registered XYZ assets. Projects can be combined and separated by bank or content group.
+
+## 0.2.4 nested collections
+
+Studio can choose a child mod beneath a collection folder. The launcher installs and resolves each child package independently.

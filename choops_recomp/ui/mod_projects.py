@@ -26,7 +26,7 @@ class ModProjects(QWidget):
         self.metadata.hide()
         advanced.toggled.connect(self.metadata.setVisible)
         row=QHBoxLayout();layout.addLayout(row);self.banks=QComboBox();row.addWidget(self.banks,1)
-        for title,fn in [('Add source bank copy',self.add_bank),('Edit project copies',self.edit),('Compare selected texture',self.compare)]:
+        for title,fn in [('Add source bank copy',self.add_bank),('Edit project copies',self.edit),('Compare selected texture',self.compare),('Import scorebug artwork…',self.scorebug)]:
             b=QPushButton(title);b.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(b)
         row=QHBoxLayout();layout.addLayout(row)
         for title,fn in [('Build one-image court…',self.court),('Build or replace uniform…',self.alternate),('Review differences',self.review),('Export Mod Folder…',self.export)]:
@@ -106,13 +106,44 @@ class ModProjects(QWidget):
             installation = self.installation(Path(read_json(folder/'project.json')['source'])/'assets')
             if installation:
                 self.opened(ModProject(folder, installation[1]))
-        elif (folder/'mod.json').is_file():
+        else:
+            if not (folder/'mod.json').is_file():
+                choices = self.collection_children(folder)
+                if not choices:
+                    raise ValueError('No mod.json packages found in this folder')
+                label, ok = QInputDialog.getItem(
+                    self, 'Open from collection', 'Child mod folder',
+                    list(choices), editable=False,
+                )
+                if not ok:
+                    return
+                folder = choices[label]
             installation = self.installation()
             destination = self.new_location() if installation else None
             if destination:
                 self.studio.run_job(lambda _: ModProject.import_folders(destination, *installation, [folder]), self.opened)
-        else:
-            raise ValueError('Select a folder containing project.json or mod.json')
+
+    @staticmethod
+    def collection_children(folder):
+        import os
+        from stat import FILE_ATTRIBUTE_REPARSE_POINT
+
+        choices = {}
+        visited = 0
+        for base, dirs, files in os.walk(folder, followlinks=False):
+            visited += 1
+            if visited > 8192:
+                raise ValueError('Collection has too many folders')
+            current = Path(base)
+            dirs[:] = sorted(
+                name for name in dirs if not name.startswith('.')
+                and not (getattr((current/name).lstat(), 'st_file_attributes', 0) & FILE_ATTRIBUTE_REPARSE_POINT)
+                and not (current/name).is_symlink()
+            )
+            if 'mod.json' in files:
+                choices[current.relative_to(folder).as_posix()] = current
+                dirs.clear()
+        return choices
 
     def opened(self, project):
         self.project = project
@@ -275,6 +306,13 @@ class ModProjects(QWidget):
         artwork = art.text()
         self.studio.run_job(lambda _:project.stage_full_court(target, artwork),
                             lambda result:self.feature_saved(project, f'Saved {result} court to the project.'))
+
+    def scorebug(self):
+        project = self.require()
+        archive, _ = QFileDialog.getOpenFileName(self, 'Import PS3 scorebug textures', filter='Scorebug ZIP (*.zip)')
+        if archive:
+            self.studio.run_job(lambda _: project.stage_scorebug_artwork(archive),
+                                lambda count: self.feature_saved(project, f'Saved {count} Xbox scorebug textures.'))
 
     def alternate(self):
         project = self.require()

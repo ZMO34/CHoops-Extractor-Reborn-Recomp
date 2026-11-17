@@ -143,3 +143,7 @@ The builder generates the same verified bump and material maps for replacements 
 ## 0.2.3 mod folder round trips
 
 Mod folders preserve registered uniform pairs, named texture identities, conditional texture metadata, and supplied payloads. Combined projects require disjoint content. A separated project keeps the selected group intact. Some payloads are carried through export without an editor.
+
+## 0.2.4 collection and scorebug coverage
+
+Nested package browsing uses the Xbox package contract. The scorebug importer converts five verified artwork slots. The PlayStation scene layout and a live network selector are pending.

@@ -192,3 +192,7 @@ A replacement targets the same case-sensitive canonical filename and stock bank 
 ## Mod project folder identities
 
 Studio identifies named texture slots from the catalog and checks the source digest before exposing an imported asset for editing. Registered uniform folders use their native bank names and validated template metadata. The editor pairs a selection uniform bank with its world bank during separation.
+
+## Bottom-bar scorebug artwork conversion
+
+The PS3 wrapper and Xbox scorebug record contain six matching texture IDs. The importer preserves Xbox scene and material data and maps five artwork textures by identity. Xbox slot 0 stores luminance, slot 1 stores RGB565, and slots 2 through 4 store BC3. The sixth slot remains the Xbox support texture.

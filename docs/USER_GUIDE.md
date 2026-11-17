@@ -215,3 +215,14 @@ Studio remembers the installed assets path and the Mods folder. Use **Set Mods F
 Choose **Open Project or Mod Folder** to open an author project or bring an existing `mod.json` package into a new working folder. Named texture paths and registered XYZ world and selection banks are available in the project browser. Other package payloads can be carried through export according to their existing manifest contract.
 
 **Combine with Mod Folder** makes a new project containing the current project and another package. An overlap on the same resource requires a choice of input. **Separate Content** makes a new project containing the selected bank, uniform pair, roster, or code group. Give combined and separated projects a new mod ID. Export a new folder for launcher import.
+
+## Browse a mod collection
+
+Choose **Open Project or Mod Folder**, select the collection folder, and choose
+a child package to edit. Export separate packages into the appropriate
+collection folders for use in the launcher. The collection root holds
+categories and child packages. Each child has its own `mod.json`.
+
+Choose **Import scorebug artwork** inside an open project to convert a supported
+PS3 bottom-bar ZIP into Xbox texture overrides. The conversion uses the Xbox
+scene layout. Export the textures as a mod folder.

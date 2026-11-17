@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 import shutil
 import struct
-import uuid
 import zlib
 from .roster import Roster
 from .workspace import sha,atomic_write
@@ -191,16 +190,36 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
     roster_path=roster_resource.component_path()
     if sha(roster_path.read_bytes())!=sha(model.original):raise ValueError('Roster changed on disk; reopen before creating uniforms')
     if workspace.manifest.get('storage')!='loose-resources':raise ValueError('Finish the direct-folder migration before adding assets')
-    plans=[];created=[];temporary=[]
+    created = []
     try:
+        created = clone_pair(workspace, template, asset, variant, workspace.assets)
+        atomic_write(roster_path, updated, sha(model.original))
+        model._commit(updated)
+        model.original = updated
+        return dict(asset=asset,variant=variant,owner=owner,folders=[p.name for p in created],uniform_rows=len(rows(model)))
+    except BaseException:
+        for path in created:
+            shutil.rmtree(path)
+        raise
+
+
+def clone_pair(workspace, template, asset, variant, destination):
+    """Clone two source banks with independent BC identities and no roster writes."""
+    from tempfile import TemporaryDirectory
+
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    plans, created = [], []
+    with TemporaryDirectory(prefix='.studio-uniform-', dir=destination) as scratch:
+        folder = Path(scratch)
         for selection in (False,True):
             source_name=name(template['asset'],template['variant'],selection);target_name=name(asset,variant,selection)
             source_hash=zlib.crc32(source_name.upper().encode())&0xffffffff;target_hash=zlib.crc32(target_name.upper().encode())&0xffffffff
             if target_hash in workspace.by_hash:raise ValueError('Uniform or selection asset already exists: '+target_name)
             if source_hash not in workspace.by_hash:raise ValueError('Required Xbox template is missing: '+source_name)
-            entry,layout=workspace.by_hash[source_hash];source=workspace.safe(entry['folder']);target=workspace.assets/target_name
+            entry,layout=workspace.by_hash[source_hash];source=workspace.safe(entry['folder']);target=destination/target_name
             if target.exists():raise ValueError('New asset folder already exists')
-            temp=workspace.assets/('.studio-uniform-'+uuid.uuid4().hex);temporary.append(temp);shutil.copytree(source,temp,ignore=shutil.ignore_patterns('*.stored'))
+            temp=folder/target_name;shutil.copytree(source,temp,ignore=shutil.ignore_patterns('*.stored'))
             if not layout.get('blocks'):raise ValueError('New uniform requires a standard Xbox template')
             cloned=copy.deepcopy(layout);cloned['textures']=[]
             flags=entry.get('toc_flags',workspace.manifest['loader_metadata']['toc_flags'].get(str(entry.get('template_hash',source_hash))))
@@ -238,17 +257,15 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
                 cloned['textures'].append(dict(path=relative,record=record['index'],sha256=sha(private_image),identity=dds.fnv64(private_image[128:]),descriptor=dict(width=info['width'],height=info['height'],format=fmt)))
             (temp/'asset.json').write_text(json.dumps(cloned,indent=2)+'\n')
             plans.append((temp,target))
-        for temp,target in plans:temp.rename(target);created.append(target)
-        atomic_write(roster_path,updated,sha(model.original))
-        model._commit(updated);model.original=updated
-        return dict(asset=asset,variant=variant,owner=owner,folders=[str(p.name) for p in created],uniform_rows=len(rows(model)))
-    except Exception:
-        for folder in created:
-            if folder.resolve().parent==workspace.assets and folder.name in [t.name for _,t in plans]:shutil.rmtree(folder)
-        raise
-    finally:
-        for folder in temporary:
-            if folder.exists() and folder.resolve().parent==workspace.assets and folder.name.startswith('.studio-uniform-'):shutil.rmtree(folder)
+        try:
+            for temp, target in plans:
+                temp.rename(target)
+                created.append(target)
+        except BaseException:
+            for path in created:
+                shutil.rmtree(path)
+            raise
+    return created
 
 
 def clone_artwork(workspace,model,roster_resource,team,index,asset):

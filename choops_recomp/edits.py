@@ -4,11 +4,11 @@ from . import dds,audio,scene
 from .workspace import atomic_write,sha
 
 
-def artwork_payload(path,original):
+def artwork_payload(path,original,mipmaps=True):
     """Retain supplied DDS or encode image artwork at its supplied resolution."""
     from pathlib import Path
     path=Path(path)
-    return path.read_bytes() if path.suffix.casefold()=='.dds' else dds.from_image(path,original)
+    return path.read_bytes() if path.suffix.casefold()=='.dds' else dds.from_image(path,original,mipmaps=mipmaps)
 
 
 def reference(resource):
@@ -29,7 +29,34 @@ def register(resource,source,path,kind):
     atomic_write(marker,(json.dumps(registry,indent=2)+'\n').encode(),sha(before) if before is not None else None)
 
 
+def named_texture_path(resource,slot=0):
+    return getattr(resource.workspace,'texture_catalog',{}).get(
+        (resource.entry['hash'],resource.record['index'],slot))
+
+
+def save_named_texture(path,payload):
+    original=path.read_bytes()
+    old,new=dds.info(original),dds.info(payload)
+    for field in ('width','height','fourcc','raw_format','faces','swizzle'):
+        if old.get(field)!=new.get(field):raise ValueError('Keep the named DDS dimensions and encoding')
+    if new['mips']!=1 or original[76:108]!=payload[76:108]:
+        raise ValueError('Keep the named DDS base-level format and channel masks')
+    atomic_write(path,payload,sha(original))
+    return path
+
+
+def scene_texture_files(resource):
+    textures=scene.textures(resource.blocks())
+    for texture in textures:
+        path=named_texture_path(resource,texture['index'])
+        if path is not None:
+            texture.update(dds=path.read_bytes(),name=path.stem)
+    return textures
+
+
 def save_scene_texture(resource,index,payload):
+    path=named_texture_path(resource,index)
+    if path is not None:return save_named_texture(path,payload)
     original=next(t['dds'] for t in scene.textures(resource.blocks()) if t['index']==index and 'dds' in t)
     if 'raw_format' in dds.info(original) or dds.info(original).get('direct_component'):
         from types import SimpleNamespace
@@ -43,6 +70,8 @@ def save_scene_texture(resource,index,payload):
 
 
 def save_texture(resource,payload):
+    path=named_texture_path(resource)
+    if path is not None:return save_named_texture(path,payload)
     blocks=resource.blocks();original=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None)
     if 'raw_format' in dds.info(original) or dds.info(original).get('direct_component'):
         from .raw_texture import save_dds,save_bc_base

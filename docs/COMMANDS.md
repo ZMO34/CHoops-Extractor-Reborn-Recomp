@@ -105,3 +105,16 @@ DLLs or game were executed, and no user saves were changed in this follow-up.
 The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
 Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
 accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
+
+## Named mod folders
+
+The shared authoring backend exposes ModProject.export_folder(destination). It validates the folder against a trusted runtime and publishes it after a source recheck.
+
+## 0.2.0 mod-folder authoring commands
+
+- `choops-recomp mod full-court PROJECT s272 ARTWORK.dds --runtime RECOMP`
+- `choops-recomp mod alternate PROJECT TEAM_INDEX X JERSEY DDS_OR_IMAGE --selection SELECTION --runtime RECOMP`. The second artwork argument is the world shorts.
+- `choops-recomp mod export PROJECT NEW_FOLDER --runtime RECOMP`
+
+Resource-writing commands require the project's edit/assets workspace. Project export uses runtime validation. Use the desktop asset browser or the CLI info and roster-link commands to find identities in the original installation.

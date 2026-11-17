@@ -95,6 +95,17 @@ class Workspace:
         if self.manifest.get('version')!=1 or self.manifest.get('platform')!='xbox360':raise ValueError('An Xbox recomp folder installation is required')
         from .runtime_protocol import augment_manifest
         self.manifest=augment_manifest(self.root,self.manifest)
+        self.texture_catalog={}
+        texture_catalog=self.root/'scene_textures.json'
+        if texture_catalog.is_file():
+            catalog=json.loads(texture_catalog.read_text(encoding='utf-8-sig'))
+            if catalog.get('version')!=1:raise ValueError('Unsupported named texture catalog')
+            for owner in catalog['scenes']:
+                for item in owner['textures']:
+                    if not item['file'].startswith('assets/'):continue
+                    key=(owner['bank'],owner['record'],item['slot'])
+                    if key in self.texture_catalog:raise ValueError('Duplicate named texture slot')
+                    self.texture_catalog[key]=self.safe(item['file'])
         self.resources=[];self.banks={};self._by_key={}
         from .identities import bank_labels
         self.by_hash={};self.labels=bank_labels(self.manifest['entries'])

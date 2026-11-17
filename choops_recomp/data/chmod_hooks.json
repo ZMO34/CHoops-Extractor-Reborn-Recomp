@@ -13,7 +13,8 @@
     "lifecycle.runtime.ready",
     "lifecycle.runtime.stopping",
     "data.player.weight.read",
-    "data.player.weight.pending_write"
+    "data.player.weight.pending_write",
+    "hook.presentation.button_style"
   ],
   "package_hooks": [
     {
@@ -136,6 +137,37 @@
       "compiled": true,
       "structurally_validated": false,
       "in_game_verified": false
+    },
+    {
+      "id": "presentation.button_style",
+      "numeric_id": 5,
+      "version": 1,
+      "abi": 2,
+      "abis": [
+        2
+      ],
+      "guest_address": "847DC530",
+      "arguments": "ChmodButtonStyleArgs",
+      "result": "ChmodButtonStyleResult",
+      "operations": [
+        "before",
+        "after",
+        "result"
+      ],
+      "contract": "Native Options/Presentation Button Style: immutable query/toggle args; after-transform returns Xbox=0 or PlayStation=1. Requires paired conditional DDS assets. One package provider; original fallback Xbox.",
+      "thread": "host setup QUERY before guest launch; native menu caller for QUERY/TOGGLE; serialized by adapter",
+      "lifetime": "callback-scoped values only; no game object handles",
+      "persistence": "host-owned preference under isolated native-mod user_data_root; no native save edits",
+      "evidence": [
+        "generated sub_847DC530 / sub_847E0668 / sub_847D9E50 / sub_847D9E60",
+        "generated sub_848635D8 / sub_84864758 / sub_84D5A028",
+        "docs/findings/2026-11-08-presentation-button-style.md"
+      ],
+      "status": "Researched",
+      "implemented": true,
+      "compiled": true,
+      "structurally_validated": false,
+      "in_game_verified": false
     }
   ],
   "domains": {
@@ -146,7 +178,7 @@
     "team_roster_conference": "research required for executable SDK; native roster tooling separate",
     "simulation_generated_content": "research required",
     "season_competition_scheduling": "research required",
-    "ui_text_presentation": "research required",
+    "ui_text_presentation": "native Presentation Button Style row only; other UI requires research",
     "input_navigation": "research required",
     "frame_timing": "existing diagnostics only, not public hooks"
   }

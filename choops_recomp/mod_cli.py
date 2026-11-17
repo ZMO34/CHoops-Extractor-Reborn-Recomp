@@ -10,12 +10,17 @@ def main(argv=None):
     sub=p.add_subparsers(dest='command',required=True)
     s=sub.add_parser('create');s.add_argument('project',type=Path);s.add_argument('--assets',type=Path,required=True);s.add_argument('--runtime',type=Path,required=True)
     for field in ('id','name','author'):s.add_argument('--'+field,required=True)
-    for name in ('add-bank','review','export','attach-roster','attach-extension','attach-uniform','metadata'):
+    for name in ('add-bank','review','export','full-court','alternate','attach-roster','attach-extension','attach-uniform','metadata'):
         s=sub.add_parser(name);s.add_argument('project',type=Path)
-        if name in ('export', 'attach-roster', 'attach-extension', 'attach-uniform'):
+        if name in ('export','full-court','alternate','attach-roster','attach-extension','attach-uniform'):
             s.add_argument('--runtime', type=Path, required=True, help='Trusted local runtime installation')
         if name=='add-bank':s.add_argument('bank')
         if name=='export':s.add_argument('output',type=Path);s.add_argument('--dependency',action='append',default=[],type=Path)
+        if name=='full-court':s.add_argument('court');s.add_argument('dds',type=Path)
+        if name=='alternate':
+            s.add_argument('team',type=int);s.add_argument('slot',choices=('X','Y','Z'))
+            s.add_argument('jersey',type=Path);s.add_argument('shorts',type=Path)
+            s.add_argument('--selection',type=Path)
         if name=='attach-roster':s.add_argument('payload',type=Path);s.add_argument('header',type=Path)
         if name=='attach-extension':
             s.add_argument('dll',type=Path);s.add_argument('--abi',type=int,choices=(1,2),default=1)
@@ -29,7 +34,9 @@ def main(argv=None):
     project=ModProject(a.project, getattr(a, 'runtime', None))
     if a.command=='add-bank':project.add_bank(a.bank)
     elif a.command=='review':print(json.dumps(project.review(),indent=2))
-    elif a.command=='export':print(json.dumps(project.export(a.output,a.dependency),indent=2))
+    elif a.command=='export':print(json.dumps(project.export_folder(a.output,a.dependency),indent=2))
+    elif a.command=='full-court':print(project.stage_full_court(a.court,a.dds))
+    elif a.command=='alternate':print(json.dumps(project.create_alternate(a.team,'XYZ'.index(a.slot)+2,a.jersey,a.shorts,a.selection)))
     elif a.command=='attach-roster':project.attach_roster(a.payload,a.header)
     elif a.command=='attach-extension':project.attach_extension(a.dll,abi=a.abi,capabilities=a.capability,replacements=a.replacement)
     elif a.command=='attach-uniform':project.attach_uniform(a.folder,a.template_hash)

@@ -164,3 +164,17 @@ DLLs or game were executed, and no user saves were changed in this follow-up.
 The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
 Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
 accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
+
+## Named mod folders
+
+Synthetic folder-export coverage exercises named DDS save and export against the runtime resolver. No game launch is part of these checks.
+The 23 mod-project tests passed, including export, flat folder installation, and native staging of a named DDS. The packaged Windows editor opened the synthetic fixture offscreen with no startup error.
+
+## 0.2.0 Windows authoring checks
+
+The Python/Qt suite passed 164 tests. A separate offline retail smoke built
+Georgia Southern's s272 floor and Albany's X artwork pair, then resolved the
+combined exported folder with the production launcher. The checks used private
+project copies and did not launch the game. They establish export and resolver
+compatibility, not in-game appearance or roster activation.

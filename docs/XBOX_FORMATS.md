@@ -171,3 +171,12 @@ DLLs or game were executed, and no user saves were changed in this follow-up.
 The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
 Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
 accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
+
+## Named mod folders
+
+Named DDS overrides bind the existing Xbox bank, record, slot, and source digest in mod.json. Support maps retain their DDS encoding.
+
+## 0.2.0 authored artwork
+
+Existing textures retain catalog identities and source hashes. Full courts bind both floor SCNE components and fit the UGA artwork coordinates using the native tool. New alternate banks preserve the template layout and use verified private BC texture identities. The package inventories both uniform banks and leaves roster automatic linking to the launcher.

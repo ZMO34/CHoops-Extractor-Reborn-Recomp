@@ -28,6 +28,7 @@ def author(tmp_path):
     runtime=tmp_path/'runtime';(runtime/'tools').mkdir(parents=True);(runtime/'docs/formats').mkdir(parents=True)
     backend=(RUNTIME/'tools/chmod.ps1').read_text();backend=backend.replace('71e8983d1cc009e485696aad19b5fa4b4661761870e2c8972717b932c1e4be36',IDENTITY)
     (runtime/'tools/chmod.ps1').write_text(backend)
+    shutil.copyfile(RUNTIME/'tools/chmod_stage.cs',runtime/'tools/chmod_stage.cs')
     shutil.copyfile(RUNTIME/'ch2k8_tools.exe',runtime/'ch2k8_tools.exe')
     for name in ('chmod.schema.json','hook_registry.json'):shutil.copyfile(RUNTIME/'docs/formats'/name,runtime/'docs/formats'/name)
     p=ModProject.create(tmp_path/'author',game/'assets',runtime,'test.art','Synthetic','Tests')
@@ -43,7 +44,7 @@ def change_texture(p):
 
 def test_export_reopen_update_preserves_source_and_only_changes(author,tmp_path):
     p,game,runtime=author;before=inventory(game);change_texture(p)
-    p=ModProject(p.root);rows=p.review();assert len(rows)==1
+    p=ModProject(p.root,runtime);rows=p.review();assert len(rows)==1
     out=tmp_path/'art.chmod';manifest=p.export(out)
     assert validate_archive(out)==manifest
     assert inventory(game)==before
@@ -51,6 +52,65 @@ def test_export_reopen_update_preserves_source_and_only_changes(author,tmp_path)
     p.state['manifest']['version']='1.0.1';p.save();p.export(tmp_path/'art-update.chmod')
     assert validate_archive(out)['version']=='1.0.0'
     with pytest.raises(ValueError,match='new .chmod'):p.export(out)
+
+
+def test_named_texture_exports_and_installs_as_a_mod_folder(author,tmp_path):
+    project,game,runtime=author
+    entry=read_json(game/'assets.json')['entries'][0]
+    layout_path=game/entry['folder']/'asset.json'
+    layout=read_json(layout_path)
+    record=layout['records'][0]
+    old=game/entry['folder']/record['folder']/'texture.dds'
+    named=old.with_name('diffuse_12345678.dds')
+    old.rename(named)
+    relative=named.relative_to(game).as_posix()
+    layout['textures']=[]
+    write_json(layout_path,layout)
+    write_json(game/'scene_textures.json',dict(version=1,scenes=[
+        dict(bank=entry['hash'],record=record['index'],kind='txtr',textures=[
+            dict(slot=0,file=relative,sha256=sha(named.read_bytes()))])]))
+    p=ModProject.create(tmp_path/'named-author',game/'assets',runtime,'test.named','Named','Tests')
+    p.state['manifest']['requires']['xex_sha256']=project.state['manifest']['requires']['xex_sha256']
+    p.state['description']='Named texture folder test'
+    p.save()
+    p.add_bank(Path(entry['folder']).name)
+    from choops_recomp.edits import save_texture
+    resource=p.workspace().of_type('TXTR')[0]
+    edited=bytearray(named.read_bytes())
+    edited[128]^=0xff
+    assert save_texture(resource,bytes(edited))==p.edit/relative
+    output=tmp_path/'test.named'
+    result=p.export_folder(output)
+    assert read_json(output/'mod.json')==result
+    assert result['description']=='Named texture folder test'
+    assert result['assets'][0]['texture_slot']==0
+    assert result['assets'][0]['target']==result['assets'][0]['file']==relative
+    assert (output/relative).read_bytes()==edited
+    assert named.read_bytes()!=edited
+    script=tmp_path/'check-folder.ps1'
+    script.write_text("""
+param($Backend,$Folder,$Game,$Mods,$Cache,$Tool)
+$ErrorActionPreference='Stop'
+. $Backend
+$null=Install-Chmod $Folder $Mods -ModFolder
+$plan=Resolve-Chmods $Game $Mods @([pscustomobject]@{id='test.named';version='1.0.0'})
+$staged=New-ChmodCache $Game $Cache $plan {
+    param($Root)
+    $proof=& $Tool prepare $Root | ConvertFrom-Json
+    if($LASTEXITCODE -ne 0 -or $proof.scene_dds_edits -ne 1){throw 'Named DDS did not reach the runtime overlay'}
+}
+[pscustomobject]@{installed=(Join-Path $Mods 'test.named');stage=$staged}|ConvertTo-Json -Compress
+""",encoding='utf-8')
+    run=subprocess.run(['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(script),
+                        str(runtime/'tools/chmod.ps1'),str(output),str(game),str(tmp_path/'mods'),
+                        str(tmp_path/'cache'),str(runtime/'ch2k8_tools.exe')],
+                       capture_output=True,text=True,timeout=90)
+    assert run.returncode==0,run.stdout+run.stderr
+    proof=json.loads(run.stdout)
+    assert (Path(proof['installed'])/'mod.json').is_file()
+    assert (Path(proof['stage'])/relative).read_bytes()==edited
+    assert named.read_bytes()!=edited
+
 
 
 def test_unknown_changes_and_source_mutation_fail_closed(author,tmp_path):
@@ -100,7 +160,7 @@ def test_native_roster_and_hook_gates(author,tmp_path):
     payload,header,_=synthetic_roster();save=tmp_path/'Roster.ROS';head=tmp_path/'Roster.ROS.header';save.write_bytes(payload);head.write_bytes(header)
     p.attach_roster(save,head)
     assert p.state['manifest']['roster']['sha256']==sha(payload)
-    with pytest.raises(ValueError,match='unsupported'):p.attach_extension(tmp_path/'none.dll','scorebug.draw')
+    with pytest.raises(ValueError,match='legacy weight-read'):p.attach_extension(tmp_path/'none.dll','scorebug.draw')
     bogus=tmp_path/'bad.dll';bogus.write_bytes(b'not a DLL')
     with pytest.raises(ValueError):p.attach_extension(bogus)
     assert 'extensions' not in p.state['manifest']

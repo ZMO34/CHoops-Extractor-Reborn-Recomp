@@ -44,7 +44,12 @@ def main(argv=None):
         if command=='import-csv':s.add_argument('--fields',help='Comma-separated reviewed field keys; omitted applies all changed fields')
     args=p.parse_args(argv)
     project_root=args.assets.resolve().parents[1]
-    if (project_root/'project.json').is_file() and args.assets.resolve()==project_root/'edit/assets':
+    project_edit = (project_root/'project.json').is_file() and args.assets.resolve()==project_root/'edit/assets'
+    read_only = {'info','roster-links','inspect-resource','compare-csv','scene-info',
+                 'review-audio-folder','roster-export'}
+    if args.command not in read_only and not args.command.startswith('export-') and not project_edit:
+        p.error('Installed assets are read-only. Use a Mod Project and its edit/assets folder.')
+    if project_edit:
         from .mod_project import ModProject
         w=ModProject(project_root).workspace()
     else:w=Workspace(args.assets)

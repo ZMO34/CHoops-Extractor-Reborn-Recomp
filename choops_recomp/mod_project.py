@@ -86,8 +86,8 @@ class RuntimeContract:
             if read_json(self.root/'docs/formats'/name) != read_json(local):
                 raise ValueError('Runtime contract differs from Studio snapshot; update Studio before exporting')
 
-    def native(self, command, *args):
-        result = subprocess.run([str(self.tool), command, *map(str, args)], capture_output=True, text=True, timeout=45, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+    def native(self, command, *args, timeout=120):
+        result = subprocess.run([str(self.tool), command, *map(str, args)], capture_output=True, text=True, timeout=timeout, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
         if result.returncode: raise ValueError(result.stderr or result.stdout)
         proof = json.loads(result.stdout)
         if proof.get('ready') is not True: raise ValueError('Native contract did not report ready')
@@ -176,13 +176,28 @@ class ModProject:
         if bank in self.state['banks']: return
         entry=matches[0];source=safe(self.source,entry['folder'])
         layout=read_json(source/'asset.json')
-        if not layout.get('blocks') or layout.get('paired_resources'): raise ValueError('Only standard source-bound banks are exportable; paired resources remain gated')
+        if not layout.get('blocks') and not layout.get('paired_resources'):
+            raise ValueError('Select a source-bound resource bank')
+        if any(c['path'] and c['folder']!=entry['folder']
+               for record in layout.get('paired_resources',[]) for c in record['component_files']):
+            raise ValueError('This paired bank still stores components outside its named folder')
         files=inventory(source)
         with tempfile.TemporaryDirectory(prefix='.bank-',dir=self.root) as temp:
             stage=Path(temp)/bank;shutil.copytree(source,stage)
             if inventory(stage)!=files or inventory(source)!=files: raise ValueError('Source changed during project copy')
             os.rename(stage,safe(self.edit,entry['folder']))
         edit_catalog=read_json(self.edit/'assets.json');edit_catalog['entries'].append(entry);write_json(self.edit/'assets.json',edit_catalog)
+        source_textures=self.source/'scene_textures.json'
+        if source_textures.is_file():
+            catalog=read_json(source_textures,64*1024*1024)
+            if catalog.get('version')!=1:raise ValueError('Unsupported named texture catalog')
+            marker=self.edit/'scene_textures.json'
+            current=read_json(marker,64*1024*1024) if marker.exists() else dict(version=1,scenes=[],unsupported=[])
+            for owner in catalog['scenes']:
+                if owner['bank']!=entry['hash']:continue
+                textures=[item for item in owner['textures'] if item['file'].startswith(entry['folder']+'/')]
+                if textures:current['scenes'].append(dict(owner,textures=textures))
+            write_json(marker,current)
         self.state['banks'].append(bank)
         self.state['baseline'].update({entry['folder']+'/'+p:h for p,h in files.items()})
         self.save()
@@ -283,6 +298,113 @@ class ModProject:
             if target.resolve().is_relative_to(self.package_root.resolve()):shutil.rmtree(target)
             raise
 
+    def stage_full_court(self, court, artwork):
+        """Convert one full-court DDS into the project's private floor components."""
+        if not re.fullmatch(r's[0-9]{3}', court):
+            raise ValueError('Choose a court ID such as s272')
+        artwork = Path(artwork)
+        if artwork.suffix.casefold() != '.dds' or artwork.stat().st_size > 4 * 1024 * 1024:
+            raise ValueError('Choose a 2048×1024 BC1 DDS with all mip levels')
+        self.check_source()
+        with tempfile.TemporaryDirectory(prefix='.full-court-', dir=self.root) as tmp:
+            stage = Path(tmp)
+            image = stage / court / 'floor.dds'
+            image.parent.mkdir()
+            shutil.copyfile(artwork, image)
+            self.contract.native('build-full-floor', self.source, image, stage / 'mods')
+            folder = stage / 'mods' / f'full-floor.{court}-1.0.0'
+            self.add_bank(court + '.iff')
+            manifest = read_json(folder / 'mod.json')
+            state = copy.deepcopy(self.state)
+            state['manifest']['requires']['mod_api'] = '1.3.0'
+            changes = {safe(self.edit, entry['target']): safe(folder, entry['file']).read_bytes()
+                       for entry in manifest['assets']}
+            self._commit_attachment(changes, state)
+        return court
+
+    def create_alternate(self, team, variant, jersey, shorts, selection=None):
+        """Create and validate a world/selection pair from the team's Home art."""
+        from . import dds, uniforms
+        from .edits import artwork_payload
+        from .roster import Roster
+        import zlib
+
+        if variant not in (2, 3, 4):
+            raise ValueError('Choose X, Y or Z')
+        self.check_source()
+        stock = Workspace(self.source / 'assets')
+        roster, = (resource for resource in stock.of_type('ROST') if resource.bank == 'roster_english.iff')
+        model = Roster(roster.blocks()[0])
+        owner = uniforms.owner(model, team)
+        if uniforms.owners(model, owner) != [team]:
+            raise ValueError('This team shares uniform routing. Use a source-bound native roster for independent routing.')
+        rows = uniforms.rows(model)
+        homes = [row for row in rows if row['owner'] == owner and row['variant'] == 0]
+        if len(homes) != 1:
+            raise ValueError('This team has no unique Home uniform template')
+        template, = homes
+        asset = template['asset']
+        owners = {row['owner'] for row in rows if row['asset'] == asset and row['variant'] in (0, 1)
+                  and uniforms.owners(model, row['owner'])}
+        if owners != {owner}:
+            raise ValueError('This artwork ID is shared across teams and cannot be linked automatically')
+        if any(row['owner'] == owner and row['variant'] == variant for row in rows):
+            raise ValueError('The alternate slot already exists. Edit its textures as an existing asset.')
+        with tempfile.TemporaryDirectory(prefix='.alternate-', dir=self.root) as tmp:
+            pair = uniforms.clone_pair(stock, template, asset, variant, Path(tmp))
+            state = copy.deepcopy(self.state)
+            changes = {}
+            for bank, inputs in zip(pair, ((jersey, shorts), (selection or jersey,))):
+                layout = read_json(bank / 'asset.json')
+                identity = layout['identity']
+                bound = {texture['record']: texture for texture in layout['textures']}
+                for names, artwork in zip((('unifregion', 'unif'), ('shortregion', 'short')), inputs):
+                    for name in names:
+                        matches = [r for r in layout['records']
+                                   if r['id'] == zlib.crc32(name.encode()) and r['index'] in bound]
+                        if matches:
+                            break
+                    if len(matches) > 1:
+                        raise ValueError(f'Ambiguous {name} artwork in {bank.name}')
+                    if not matches:
+                        if bank.name.startswith('sel'):
+                            continue
+                        raise ValueError(f'Missing {name} artwork in {bank.name}')
+                    target = bank / bound[matches[0]['index']]['path']
+                    before = target.read_bytes()
+                    dds.replace(target, artwork_payload(artwork, before), before)
+                name = bank.name
+                relative = 'uniforms/' + name
+                template_hash = identity['template_hash']
+                source_entry, _ = stock.by_hash[template_hash]
+                digest = sha(safe(self.source, source_entry['folder'] + '/asset.json').read_bytes())
+                # Loose imports can carry preview DDS files in addition to the
+                # native bank pieces and registered standalone DDS templates.
+                allowed = {'asset.json'}
+                packed = {block['path'] for block in layout['blocks']}
+                allowed.update(piece['path'] for piece in layout['pieces'] if piece['path'] not in packed)
+                allowed.update(part['path'] for block in layout['blocks'] for part in block['components'])
+                allowed.update(record['folder'] + '/record.json' for record in layout['records'])
+                allowed.update(texture['path'] for texture in layout['textures'])
+                for file in inventory(bank).keys() - allowed:
+                    safe(bank, file).unlink()
+                self.contract.native('validate-uniform', self.source, bank, template_hash, name, digest)
+                files = inventory(bank)
+                entries = state['manifest'].setdefault('uniforms', [])
+                previous = next((entry for entry in entries if entry['name'] == name), None)
+                if previous:
+                    if (previous['template_hash'] != template_hash or
+                        {file['path'] for file in previous['files']} != set(files)):
+                        raise ValueError('The existing project uniform uses a different template or inventory')
+                    entries.remove(previous)
+                entries.append(dict(
+                    name=name, template_hash=template_hash, template_layout_sha256=digest,
+                    folder=relative, files=[dict(path=p, sha256=h) for p,h in sorted(files.items())]))
+                for file in files:
+                    changes[safe(self.package_root, relative + '/' + file)] = safe(bank, file).read_bytes()
+            self._commit_attachment(changes, state)
+        return [bank.name for bank in pair]
+
     def build(self, destination):
         """Materialize only changed, natively supported payloads into a fresh stage."""
         from jsonschema import Draft202012Validator
@@ -309,9 +431,37 @@ class ModProject:
                 path=r.component_path().relative_to(self.edit).as_posix()
                 if path in targets: raise ValueError('Ambiguous component owner')
                 targets[path]=(r,'cloth.positions')
+        changed_paths={row['target']:row for row in changes}
+        court_paths=set()
+        for r in workspace.of_type('SCNE'):
+            if r.record['id']!=0xbe45d62e or len(r.components)!=2:
+                continue
+            paths=[r.component_path(i).relative_to(self.edit).as_posix() for i in range(2)]
+            if not any(path in changed_paths for path in paths):continue
+            original=[safe(self.source,path) for path in paths]
+            edited=[safe(self.edit,path) for path in paths]
+            self.contract.native('validate-court',*original,*edited)
+            for index,(path,src,payload) in enumerate(zip(paths,original,edited)):
+                target=safe(destination,path)
+                target.parent.mkdir(parents=True,exist_ok=True)
+                data=payload.read_bytes()
+                target.write_bytes(data)
+                m['assets'].append(dict(bank_hash=r.entry['hash'],record_index=r.record['index'],
+                    record_id=r.record['id'],record_type=r.record['type'],kind='court.scene',
+                    component=index,target=path,file=path,source_sha256=sha(src.read_bytes()),
+                    sha256=sha(data)))
+            court_paths.update(paths)
+            m['requires']['mod_api']='1.3.0'
+        resources={(r.entry['hash'],r.record['index']):r for r in workspace.resources}
+        slots={}
+        for (bank,index,slot), file in workspace.texture_catalog.items():
+            path=file.relative_to(self.edit).as_posix()
+            if path in slots:raise ValueError('Ambiguous named DDS owner: '+path)
+            targets[path]=(resources[(bank,index)],'dds.replace')
+            slots[path]=slot
         for change in changes:
             path=change['target']
-            if path=='native-roster-body.dat' or any(path.startswith(folder+'/') for folder in added):continue
+            if path in court_paths or path=='native-roster-body.dat' or any(path.startswith(folder+'/') for folder in added):continue
             if path not in targets or not change['source_sha256'] or not change['sha256']: raise ValueError('Unsupported changed file (not silently omitted): '+path)
             r,kind=targets[path];data=safe(self.edit,path).read_bytes()
             if kind=='dds.replace':
@@ -319,10 +469,14 @@ class ModProject:
                 old=dds.info(safe(self.source,path).read_bytes());new=dds.info(data);scale=new['width']//old['width']
                 if new['fourcc']!=old['fourcc'] or new['width']%old['width'] or not scale or scale&(scale-1) or new['width']*old['height']!=new['height']*old['width']: raise ValueError('Unsupported DDS format/aspect/scale')
                 dds.image(data)
+                if path in slots and (new['width']!=old['width'] or new['height']!=old['height'] or new['mips']!=1 or
+                                      data[76:108]!=safe(self.source,path).read_bytes()[76:108]):
+                    raise ValueError('Named DDS must retain dimensions, channel masks and a single base level')
             else:self.contract.native('validate-cloth',safe(self.source,path),safe(self.edit,path))
             target=safe(destination,path);target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
             a=dict(bank_hash=r.entry['hash'],record_index=r.record['index'],record_id=r.record['id'],record_type=r.record['type'],target=path,source_sha256=change['source_sha256'],file=path,sha256=sha(data),kind=kind)
             if kind=='cloth.positions':a['component']=0
+            if path in slots:a['texture_slot']=slots[path]
             m['assets'].append(a)
         for key in ('roster','extensions','uniforms'):
             items=([m[key]] if key=='roster' else m.get(key,[])) if key in m else []
@@ -339,6 +493,8 @@ class ModProject:
             Roster(body)
             payload=struct.pack('>I',len(body))+body;r=m['roster'];target=safe(destination,r['file']);target.write_bytes(payload);r['sha256']=sha(payload)
             self.contract.native('validate-roster',target,safe(destination,r['header']))
+        if self.state.get('description'):
+            m['description']=self.state['description']
         m['content']=[];m['capabilities']=sorted({a['kind'] for a in m['assets']})
         if m['assets'] or m.get('uniforms'):m['content'].append('assets')
         if m.get('roster'):m['content'].append('rosters');m['capabilities'].append('roster.expose')
@@ -351,6 +507,22 @@ class ModProject:
         Draft202012Validator(read_json(DATA/'chmod.schema.json')).validate(m)
         write_json(destination/'mod.json',m)
         return m
+
+    def export_folder(self, output, dependencies=None):
+        output=Path(output).resolve()
+        if output.exists():raise ValueError('Choose a new mod folder')
+        if output.is_relative_to(self.source) or output.is_relative_to(self.root):
+            raise ValueError('Export outside the source and author project')
+        output.parent.mkdir(parents=True,exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='.mod-folder-',dir=output.parent) as temp:
+            stage=Path(temp)/'mod'
+            stage.mkdir()
+            manifest=self.build(stage)
+            self.contract.package(stage,self.source,dependencies)
+            self.check_source()
+            if output.exists():raise ValueError('Destination appeared during export')
+            os.rename(stage,output)
+        return manifest
 
     def export(self, output, dependencies=None):
         output=Path(output).resolve()

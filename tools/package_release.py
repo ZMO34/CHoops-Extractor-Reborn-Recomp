@@ -1,5 +1,5 @@
 """Package the already-verified Windows onedir editor, never game assets."""
-import hashlib,json,subprocess,zipfile
+import argparse,hashlib,json,subprocess,zipfile
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -8,7 +8,13 @@ from build_windows import collect_licenses
 
 
 def main():
-    root=Path(__file__).resolve().parents[1];package=root/'output/package/CHoops-Recomp-Studio';output=root/'output/releases';output.mkdir(exist_ok=True)
+    root=Path(__file__).resolve().parents[1]
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--package',type=Path,default=root/'output/package/CHoops-Recomp-Studio')
+    args=parser.parse_args()
+    package=args.package.resolve()
+    output=root/'output/releases'
+    output.mkdir(exist_ok=True)
     if not (package/'CHoops-Recomp-Studio.exe').is_file():raise ValueError('Build the Windows editor first')
     collect_licenses(package)
     revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip()

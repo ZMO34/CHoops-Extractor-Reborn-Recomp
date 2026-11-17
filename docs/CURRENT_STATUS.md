@@ -168,3 +168,12 @@ DLLs or game were executed, and no user saves were changed in this follow-up.
 The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
 Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
 accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
+
+## Named mod folders
+
+Studio exports mod folders with mod.json and mirrored named DDS assets. The runtime resolves catalog textures by bank, record and slot.
+
+## 0.2.0 folder-first authoring
+
+Studio stages existing texture edits, one-image court component pairs and eligible X/Y/Z world/selection additions in private projects. Source browsing stays read-only. Full courts depend on the selected runtime's native court builder and stock layout coverage. Executable code authoring remains an external SDK workflow.

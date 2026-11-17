@@ -1,12 +1,10 @@
 # CHoops Recomp Studio
 
-The first Windows preview is **v0.1**. See
-[release notes](docs/RELEASE_NOTES_v0.1.md) for setup, features and limits.
+See the [v0.2.0 workflow](docs/USER_GUIDE.md#folder-mod-workflow-in-020) for setup, features and limits.
 
 Xbox 360 College Hoops 2K8 asset editor for the native recompilation.
-Open an installed game's `assets` directory; edit resources directly and restart
-through the recomp launcher to apply changes. No archive explorer, staging layer,
-disc builder or automatic game launcher is part of this application.
+Open an installed game's `assets` directory to browse and preview. Edit private
+project copies and install the exported mod folder through the recomp launcher.
 
 This is a code fork of the owner's CHoops Extractor Reborn v1.23, reworked around
 Xbox formats and loose assets. Only format behavior validated against Xbox input
@@ -20,7 +18,7 @@ https://github.com/ZMO34/CHoops-Extractor-Reborn at
 # Non-destructive CHMOD authoring
 
 The Mods / Mod Projects tab creates private source-bound projects and exports
-the runtime's canonical `.chmod` packages. See [the authoring guide](docs/CHMOD_AUTHORING.md)
+the runtime's canonical mod folders. See [the authoring guide](docs/USER_GUIDE.md)
 for supported payloads, CLI commands, runtime requirements and verification limits.
 
 The public C++ extension SDK is hosted in [sdk/](sdk/README.md), including ABI2,

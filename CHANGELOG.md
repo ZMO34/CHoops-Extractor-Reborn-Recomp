@@ -1,5 +1,11 @@
 # Changes
 
+## 0.2.0
+
+- Added artwork drops for project textures, the one-image court builder, and a team-based X/Y/Z alternate uniform wizard.
+- Existing Xbox assets open read-only in Studio. Project exports use versioned mod folders.
+- Texture and model libraries display and search Xbox bank and record paths.
+
 ## Security update
 
 Raised dependency minimums to patched releases, added dependency auditing to CI, and bounded component decompression by the declared size. Native mod validation uses an explicitly selected local runtime. Stored project runtime paths are ignored. CHMOD inspection accepts stored and deflated ZIP entries and checks the archive size before reading its directory.
@@ -104,3 +110,8 @@ Full parity and gameplay certification are not claimed.
 Added typed capability/consumer/authoring packager and remote contracts while
 preserving ABI 2 layout. Runtime/DLL compilation only; tests/gameplay pending.
 No retail or supplied artwork is committed. See sdk/BUTTON_STYLE.md.
+
+## Mod folder authoring
+
+- Export mod.json and mirrored asset files as a folder.
+- Open and save catalog-named DDS textures by their existing asset names.

@@ -159,3 +159,18 @@ DLLs or game were executed, and no user saves were changed in this follow-up.
 The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
 Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
 accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
+
+## Named mod folders
+
+In Mod Projects choose Export mod folder and select a parent directory. Studio creates a folder named for the mod ID with mod.json and assets. Copy it into the runtime mods directory or use Install mod folder.
+
+## Folder mod workflow in 0.2.0
+
+1. In **Mods / Mod Projects**, create a project using a pristine Xbox assets folder and the matching recomp runtime.
+2. For existing artwork, find a texture or scene by name or folder path, then use **Copy selected bank into Mod Project**. In the project's Textures tab, drop an image on the selected texture preview and confirm Save. For an embedded texture, select its slot and drop on the scene artwork target.
+3. For a one-image court, choose **Build one-image court**, enter the court ID or place the DDS in a folder named for the ID, and drop the DDS. Use the UGA layout at 2048×1024, BC1/DXT1, with 12 mip levels. Use a runtime with the native full-court builder.
+4. For a new uniform, choose **Add X/Y/Z jersey**, pick the school and a vacant alternate, then drop the world jersey and shorts artwork. Supply a separate selection jersey when its format or dimensions differ. The launcher links eligible Home-derived artwork; shared or occupied routes require manual roster work.
+5. Choose **Export Mod Folder**. Import the generated folder in the recomp launcher and enable its exact version.
+
+3D previews and roster editing still use the existing workspace tools. To edit a roster, attach a compatible native Roster.ROS and its aggregate header in the project. Original installed assets are read-only. Audio preview and export remain available; raw audio and indexed-font edits have no mod folder contract. Compile custom code with the SDK outside Studio. Attach a compiled supported DLL for packaging, or use the mod CLI to declare ABI 2 capabilities.

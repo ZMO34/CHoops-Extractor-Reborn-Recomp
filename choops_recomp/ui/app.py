@@ -11,6 +11,7 @@ from ..workspace import Workspace
 from .. import dds,audio,scene
 from ..roster import Roster,STRINGS
 from ..player_fields import FIELDS,RATINGS
+from .artwork_drop import ArtworkDrop
 
 
 class Signals(QObject):
@@ -40,8 +41,15 @@ class LibraryModel(QAbstractListModel):
     def __init__(self,items=None):super().__init__();self.items=items or []
     def rowCount(self,parent=QModelIndex()):return 0 if parent.isValid() else len(self.items)
     def data(self,index,role=Qt.ItemDataRole.DisplayRole):
-        if index.isValid() and role==Qt.ItemDataRole.DisplayRole:return self.items[index.row()].label
-    def set_items(self,items):self.beginResetModel();self.items=items;self.endResetModel()
+        if not index.isValid():return None
+        item = self.items[index.row()]
+        path = f"{item.entry['folder']}/{item.record['folder']}".removeprefix('assets/')
+        if role == Qt.ItemDataRole.DisplayRole:return f'{path}  •  {item.label}'
+        if role == Qt.ItemDataRole.ToolTipRole:return path
+    def set_items(self,items):
+        self.beginResetModel()
+        self.items=sorted(items,key=lambda item: (item.entry['folder'].casefold(), item.record['folder'].casefold(), item.record['index']))
+        self.endResetModel()
 
 
 class RosterModel(QAbstractTableModel):
@@ -159,11 +167,12 @@ class Studio(QMainWindow):
         for text,slot in [('Export cloth OBJ…',self.export_cloth_obj),('Import cloth positions…',self.import_cloth_obj)]:button=QPushButton(text);button.clicked.connect(slot);row.addWidget(button)
         self.cutaway=QCheckBox('Cutaway');self.cutaway.setChecked(True);self.cutaway.toggled.connect(self.toggle_cutaway);row.addWidget(self.cutaway)
         self.scene_textures=QComboBox();row.addWidget(self.scene_textures,1);export=QPushButton('Export DDS');export.clicked.connect(self.export_scene_dds);row.addWidget(export);replace=QPushButton('Replace DDS…');replace.clicked.connect(self.replace_scene_dds);row.addWidget(replace);model_page['layout'].addLayout(row)
+        drop=ArtworkDrop('Drop artwork for the selected scene texture');drop.dropped.connect(lambda path:self.replace_scene_dds(path,confirm=True));model_page['layout'].addWidget(drop)
         row=QHBoxLayout();self.uniform_picker=QComboBox();self.uniform_picker.setEditable(True);row.addWidget(self.uniform_picker,1);self.uniform_shape=QComboBox();self.uniform_shape.addItems(['U','V','V triangle','Triangle','Wishbone']);row.addWidget(self.uniform_shape);self.uniform_build=QComboBox();self.uniform_build.addItems(['reg','thin','fat']);row.addWidget(self.uniform_build);self.shorts_build=QComboBox();self.shorts_build.addItems(['reg','thin','fat']);row.addWidget(self.shorts_build);preview=QPushButton('Preview uniform');preview.clicked.connect(self.preview_uniform);row.addWidget(preview);model_page['layout'].addLayout(row)
         self.uniform_picker.currentIndexChanged.connect(self.select_uniform_shape)
         row=QHBoxLayout();self.arena_picker=QComboBox();self.arena_picker.setEditable(True);self.arena_picker.setInsertPolicy(QComboBox.InsertPolicy.NoInsert);row.addWidget(self.arena_picker,1);self.arena_mode=QComboBox();self.arena_mode.addItems(['combined','arena','floor']);row.addWidget(self.arena_mode);button=QPushButton('Preview stadium');button.clicked.connect(self.preview_arena);row.addWidget(button);model_page['layout'].addLayout(row)
         row=QHBoxLayout();self.shoe_picker=QComboBox();self.shoe_picker.setEditable(True);row.addWidget(self.shoe_picker,1);preview=QPushButton('Preview shoes');preview.clicked.connect(self.preview_shoes);row.addWidget(preview);model_page['layout'].addLayout(row)
-        self.texture_view=QLabel('Select a texture');self.texture_view.setAlignment(Qt.AlignmentFlag.AlignCenter);self.texture_view.setMinimumSize(400,400);self.pages['TXTR']['layout'].addWidget(self.texture_view,1)
+        self.texture_view=ArtworkDrop('Select a texture, then drop artwork');self.texture_view.dropped.connect(lambda path:self.replace_texture(path,confirm=True));self.texture_view.setAlignment(Qt.AlignmentFlag.AlignCenter);self.texture_view.setMinimumSize(400,400);self.pages['TXTR']['layout'].addWidget(self.texture_view,1)
         self.texture_details=QLabel();self.pages['TXTR']['layout'].addWidget(self.texture_details)
         self.texture_face=QComboBox();self.texture_face.addItem('Face 0');self.texture_face.setEnabled(False);self.texture_face.currentIndexChanged.connect(self.show_current_texture_face);self.pages['TXTR']['layout'].addWidget(self.texture_face)
         row=QHBoxLayout()
@@ -172,10 +181,10 @@ class Studio(QMainWindow):
         self.audio_details=QPlainTextEdit();self.audio_details.setReadOnly(True);self.pages['AUDO']['layout'].addWidget(self.audio_details)
         self.audio_cover=QLabel();self.audio_cover.setAlignment(Qt.AlignmentFlag.AlignCenter);self.audio_cover.setMaximumHeight(260);self.pages['AUDO']['layout'].addWidget(self.audio_cover);self.audio_cover_resource=None
         row=QHBoxLayout()
-        for text,slot in [('Play',self.play_audio),('Stop',self.stop_audio),('Export WAV…',self.export_audio),('Import WAV…',self.import_audio),('Export tab…',self.export_audio_tab),('Import folder…',self.import_audio_folder)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
+        for text,slot in [('Play',self.play_audio),('Stop',self.stop_audio),('Export WAV…',self.export_audio),('Export tab…',self.export_audio_tab)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         self.pages['AUDO']['layout'].addLayout(row);row=QHBoxLayout()
         for text,slot in [('Export cover DDS…',self.export_audio_cover),('Replace cover DDS…',self.replace_audio_cover)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
-        self.pages['AUDO']['layout'].addLayout(row);self.pages['AUDO']['layout'].addWidget(QLabel('Native WAV keeps original channels, rate and duration. No console codec is required for import.'))
+        self.pages['AUDO']['layout'].addLayout(row);self.pages['AUDO']['layout'].addWidget(QLabel('Audio preview and WAV export.'))
         from ..audio_catalog import CATEGORIES
         self.audio_categories=QTabWidget();self.audio_groups={name:[] for name in CATEGORIES}
         for name in CATEGORIES:self.audio_categories.addTab(QWidget(),name)
@@ -199,6 +208,41 @@ class Studio(QMainWindow):
         page=QWidget();layout=QVBoxLayout(page);split=QSplitter();layout.addWidget(split);left=QWidget();l=QVBoxLayout(left);search=QLineEdit();search.setPlaceholderText('Search assets…');l.addWidget(search);view=QListView();view.setUniformItemSizes(True);model=LibraryModel();proxy=QSortFilterProxyModel();proxy.setSourceModel(model);proxy.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive);view.setModel(proxy);l.addWidget(view);split.addWidget(left);right=QWidget();detail=QVBoxLayout(right);split.addWidget(right);split.setStretchFactor(1,2)
         search.textChanged.connect(proxy.setFilterFixedString);view.selectionModel().currentChanged.connect(lambda index,old,k=kind:self.select_resource(k,index));self.pages[kind]=dict(model=model,proxy=proxy,view=view,layout=detail);self.tabs.addTab(page,title)
         inspect=QPushButton('Inspect resource files…');inspect.clicked.connect(lambda checked=False,k=kind:self.inspect_resource(k));l.addWidget(inspect)
+    def copy_selected_bank(self, kind):
+        resource = self.selected(kind, self.pages[kind]['view'].currentIndex())
+        if resource is None or not self.maybe_save():
+            return
+        project = self.mod_projects.project
+        if project is None or resource.workspace.root not in (project.source, project.edit):
+            self.error('Create or open a Mod Project for this installation first')
+            return
+        def copy_bank(progress):
+            project.add_bank(resource.bank)
+            return project.workspace(progress=progress)
+        def copied(workspace):
+            if self.mod_projects.project is not project:
+                return
+            self.mod_projects.refresh()
+            self.loaded(workspace)
+            page = self.pages[kind]
+            for row, item in enumerate(page['model'].items):
+                if item.key == resource.key:
+                    source = page['model'].index(row, 0)
+                    page['view'].setCurrentIndex(page['proxy'].mapFromSource(source))
+                    break
+        self.run_job(copy_bank, copied)
+
+    def editing_project(self):
+        project = getattr(getattr(self, 'mod_projects', None), 'project', None)
+        return project is not None and self.workspace is not None and self.workspace.root == project.edit
+
+    def require_project_edit(self, roster=False):
+        if self.editing_project() and (not roster or self.roster_resource and self.roster_resource.key == 'native-roster'):
+            return True
+        self.error('Attach a native roster and its header in Mod Projects first' if roster
+                   else 'Open a Mod Project and copy this bank into it before editing')
+        return False
+
     def inspect_resource(self,kind):
         resource=self.selected(kind,self.pages[kind]['view'].currentIndex())
         if resource is None:return
@@ -239,6 +283,7 @@ class Studio(QMainWindow):
         answer=QMessageBox.question(self,'Unsaved Xbox roster','Save roster edits before continuing?',QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel)
         if answer==QMessageBox.StandardButton.Cancel:return False
         if answer==QMessageBox.StandardButton.Save:
+            if not self.require_project_edit(roster=True):return False
             try:self.roster.save(self.roster_resource.component_path())
             except (ValueError,OSError) as exc:self.error(str(exc));return False
         return True
@@ -268,6 +313,10 @@ class Studio(QMainWindow):
         self.stop_audio();self.generation+=1;self.current_texture=None;self.current_audio=None;self.scene_resource=None;self.scene_data=None;self.roster=None;self.roster_resource=None;self.roster_view.setModel(None);self.player_properties.setModel(None);self.player_ratings.setModel(None);self.scene_textures.clear();self.uniform_picker.clear();self.roster_tables.clear();self.audio_details.clear();self.texture_view.clear();self.texture_details.clear()
         if hasattr(self.view,'set_scene'):self.view.set_scene([],{})
         self.workspace=workspace
+        writable = self.editing_project() and any(r.key=='native-roster' for r in workspace.of_type('ROST'))
+        triggers = QAbstractItemView.EditTrigger.DoubleClicked | QAbstractItemView.EditTrigger.EditKeyPressed if writable else QAbstractItemView.EditTrigger.NoEditTriggers
+        for table in (self.roster_view,self.player_properties,self.player_ratings,self.player_eligibility,self.player_footwear):
+            table.setEditTriggers(triggers)
         from ..arena_preview import available as available_arenas
         self.arena_picker.clear()
         for asset in available_arenas(workspace):self.arena_picker.addItem(f'Stadium {asset:03d}',asset)
@@ -294,7 +343,7 @@ class Studio(QMainWindow):
                 self.uniform_picker.addItem(f"{caption} • {name(uniform['asset'],uniform['variant'])}",uniform['index'])
             self.uniform_picker.completer().setFilterMode(Qt.MatchFlag.MatchContains)
         project=getattr(getattr(self,'mod_projects',None),'project',None)
-        mode='private mod project copies • export through Mods' if project and workspace.root==project.edit else 'direct editing • restart the recomp'
+        mode='private mod project copies • export through Mods' if self.editing_project() else 'read-only installed assets'
         self.statusBar().showMessage(f"Xbox • {len(workspace.banks):,} banks • {len(workspace.resources):,} resources • {mode}")
     def change_table(self,table):
         if self.roster and table in self.roster.rows:
@@ -339,12 +388,14 @@ class Studio(QMainWindow):
         if self.roster_school.currentData() is not None and self.roster_school.currentData()>=0:return self.roster_school.currentData()
         return 0
     def edit_relationships(self):
+        if not self.require_project_edit(roster=True):return
         if self.roster is None:return
         from .relationships import RelationshipsDialog
         try:
             dialog=RelationshipsDialog(self,self.roster,self.selected_school());dialog.changed.connect(self.roster_changed);dialog.exec()
         except (ValueError,OSError) as exc:self.error(str(exc))
     def edit_uniforms(self):
+        if not self.require_project_edit(roster=True):return
         if self.roster is None or self.workspace is None:return
         from .uniform_editor import UniformEditor
         try:
@@ -377,7 +428,8 @@ class Studio(QMainWindow):
             self.generation+=1;generation=self.generation;self.statusBar().showMessage('Decoding Xbox scene…')
             def decode(progress):
                 blocks=r.blocks();result=scene.preview(blocks)
-                try:result['textures']=scene.textures(blocks)
+                from ..edits import scene_texture_files
+                try:result['textures']=scene_texture_files(r)
                 except ValueError:result['textures']=[]
                 result['resource']=r;result['generation']=generation;return result
             self.run_job(decode,self.show_scene)
@@ -386,12 +438,15 @@ class Studio(QMainWindow):
             try:
                 blocks=r.blocks()
                 import zlib
-                if len(blocks[0])>=12 and blocks[0][8:12]==bytes.fromhex('24820002'):
+                from ..edits import named_texture_path
+                named=named_texture_path(r)
+                if named is None and len(blocks[0])>=12 and blocks[0][8:12]==bytes.fromhex('24820002'):
                     from ..uniform_fonts import atlas
                     image=atlas(blocks);self.current_font=r;self.current_texture=None;self.texture_face.setEnabled(False);self.show_pil_image(image);self.texture_details.setText(r.label+f' • Xbox indexed font {image.width}×{image.height} • export/import PNG');return
-                payload=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None);path=r.folder/'texture.dds'
+                path=named or r.folder/'texture.dds'
+                payload=named.read_bytes() if named else dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None)
                 descriptor=dds.info(payload)
-                if 'raw_format' not in descriptor and not descriptor.get('direct_component') and path.exists():payload=path.read_bytes()
+                if named is None and 'raw_format' not in descriptor and not descriptor.get('direct_component') and path.exists():payload=path.read_bytes()
                 self.current_texture=(r,payload,path);self.texture_face.blockSignals(True);self.texture_face.clear()
                 for face in range(descriptor.get('faces',1)):self.texture_face.addItem(f'Face {face}')
                 self.texture_face.setEnabled(descriptor.get('faces',1)>1);self.texture_face.blockSignals(False);self.show_current_texture_face();self.texture_details.setText(r.label+' • '+str(descriptor))
@@ -405,7 +460,19 @@ class Studio(QMainWindow):
         self.scene_data=result;self.scene_resource=result['resource'];self.scene_textures.clear();images=dict(result.get('images',{}))
         for t in result['textures']:
             if 'dds' not in t:continue
-            source=t.get('source_resource',self.scene_resource);local=t.get('source_index',t['index']);path=source.folder/f"texture_{local:04d}.dds";descriptor=dds.info(t['dds']);payload=path.read_bytes() if path.exists() and 'raw_format' not in descriptor and not descriptor.get('direct_component') else t['dds'];images[t['index']]=dds.image(payload);self.scene_textures.addItem(f"{t.get('role','Scene')} texture {local} • {t['id']:08x}",t['index'])
+            from ..edits import named_texture_path
+            source=t.get('source_resource',self.scene_resource);local=t.get('source_index',t['index'])
+            named=named_texture_path(source,local)
+            path=named or source.folder/f"texture_{local:04d}.dds"
+            label=named.stem if named else f"Scene texture {local} / {t['id']:08x}"
+            self.scene_textures.addItem(label,t['index'])
+            try:
+                descriptor=dds.info(t['dds'])
+                payload=path.read_bytes() if named or (path.exists() and 'raw_format' not in descriptor and not descriptor.get('direct_component')) else t['dds']
+                t['dds']=payload
+                images[t['index']]=dds.image(payload)
+            except (ValueError,NotImplementedError,OSError) as exc:
+                result['warnings'].append(f"{label}: {exc}")
         if hasattr(self.view,'set_scene'):self.view.set_scene(result['meshes'],images)
         self.pages['SCNE']['details'].setPlainText(f"{len(result['meshes'])}/{result['declared_parts']} mesh parts • {sum(len(m['vertices'])//3 for m in result['meshes']):,} triangles\n"+'\n'.join(result['warnings']))
         self.statusBar().showMessage('Xbox scene ready')
@@ -482,6 +549,7 @@ class Studio(QMainWindow):
         if path:
             blocks=resource.blocks();current=resource.folder/'texture.dds';Path(path).write_bytes(current.read_bytes() if current.is_file() else dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None))
     def replace_audio_cover(self):
+        if not self.require_project_edit():return
         resource=self.audio_cover_resource
         if resource is None:return
         path,_=QFileDialog.getOpenFileName(self,'Replace Xbox cover artwork','','Artwork (*.dds *.png *.jpg *.jpeg *.tga *.bmp)')
@@ -505,28 +573,31 @@ class Studio(QMainWindow):
                 from ..raw_texture import image_from_dds
                 (image_from_dds(payload,max(0,self.texture_face.currentIndex())) if 'raw_format' in descriptor else dds.image(payload)).save(path)
             else:Path(path).write_bytes(payload)
-    def replace_texture(self):
+    def replace_texture(self,path=None,confirm=False):
+        if not self.require_project_edit():return
+        if not isinstance(path,str):path=None
+        if confirm and QMessageBox.question(self,'Replace project artwork','Save the dropped artwork to this mod project?')!=QMessageBox.StandardButton.Yes:return
         if self.current_font is not None:
-            resource=self.current_font;path,_=QFileDialog.getOpenFileName(self,'Save Xbox indexed font artwork','','Artwork (*.png *.dds *.tga *.bmp)')
-            if path:
-                try:
-                    if self.workspace is not resource.workspace:raise ValueError('Source folder changed while selecting artwork')
-                    from ..uniform_fonts import save_atlas,atlas
-                    save_atlas(resource,path);self.show_pil_image(atlas(resource.blocks()));self.statusBar().showMessage('Indexed font saved directly to its component. Restart the recomp to apply.')
-                except (ValueError,OSError) as exc:self.error(str(exc))
+            self.error('Indexed font imports do not have a mod-folder export contract')
             return
         if not self.current_texture:return
         r,old,target=self.current_texture
-        path,_=QFileDialog.getOpenFileName(self,'Replace texture artwork','','Artwork (*.dds *.png *.jpg *.jpeg *.tga *.bmp)')
+        if path is None:path,_=QFileDialog.getOpenFileName(self,'Replace texture artwork','','Artwork (*.dds *.png *.jpg *.jpeg *.tga *.bmp)')
         if not path:return
         try:
             if self.workspace is not r.workspace:raise ValueError('Source folder changed while selecting artwork')
-            from ..edits import save_texture,artwork_payload
-            if 'raw_format' in dds.info(old) or dds.info(old).get('direct_component'):
+            from ..edits import save_texture,artwork_payload,named_texture_path
+            named=named_texture_path(r)
+            if named is not None:
                 from ..raw_texture import from_image
-                payload=Path(path).read_bytes() if Path(path).suffix.casefold()=='.dds' else from_image(path,old,max(0,self.texture_face.currentIndex())) if 'raw_format' in dds.info(old) else dds.from_image(path,old,False);save_texture(r,payload);blocks=r.blocks();fresh=dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None);self.current_texture=(r,fresh,target);self.show_current_texture_face();self.statusBar().showMessage('Texture saved to its loose component; no asset bank rebuilt. Restart the recomp to apply.')
+                payload=from_image(path,old,max(0,self.texture_face.currentIndex())) if 'raw_format' in dds.info(old) and Path(path).suffix.casefold()!='.dds' else artwork_payload(path,old,False)
+                target=save_texture(r,payload)
+                self.current_texture=(r,target.read_bytes(),target);self.show_current_texture_face()
+                self.statusBar().showMessage('Saved '+target.name+ ' in project.')
+            elif 'raw_format' in dds.info(old) or dds.info(old).get('direct_component'):
+                raise ValueError('This texture is missing a named DDS slot required for folder export')
             else:
-                target=save_texture(r,artwork_payload(path,old));self.current_texture=(r,target.read_bytes(),target);self.show_image(target.read_bytes());self.statusBar().showMessage('DDS saved directly to assets. Restart the recomp to apply.')
+                target=save_texture(r,artwork_payload(path,old));self.current_texture=(r,target.read_bytes(),target);self.show_image(target.read_bytes());self.statusBar().showMessage('DDS saved in project.')
         except ValueError as exc:self.error(str(exc))
     def scene_texture(self):
         if not self.scene_data:return None
@@ -539,6 +610,7 @@ class Studio(QMainWindow):
             from ..geometry import export_obj
             self.run_job(lambda progress:export_obj(resource,path),lambda result:self.statusBar().showMessage('Exported cloth OBJ and source-bound companion. Preserve vertex order and topology.'))
     def import_cloth_obj(self):
+        if not self.require_project_edit():return
         resource=self.selected('SCNE',self.pages['SCNE']['view'].currentIndex())
         if resource is None:return
         path,_=QFileDialog.getOpenFileName(self,'Import source-bound Xbox cloth positions','','OBJ (*.obj)')
@@ -555,24 +627,33 @@ class Studio(QMainWindow):
         if not t:return
         path,_=QFileDialog.getSaveFileName(self,'Export embedded Xbox DDS','','DDS (*.dds)')
         resource=t.get('source_resource',self.scene_resource);local=t.get('source_index',t['index']);current=resource.folder/f"texture_{local:04d}.dds"
+        from ..edits import named_texture_path
+        named=named_texture_path(resource,local)
+        if path and named is not None:
+            Path(path).write_bytes(named.read_bytes())
+            return
         descriptor=dds.info(t['dds'])
         if path:Path(path).write_bytes(current.read_bytes() if current.is_file() and 'raw_format' not in descriptor and not descriptor.get('direct_component') else t['dds'])
-    def replace_scene_dds(self):
+    def replace_scene_dds(self,path=None,confirm=False):
+        if not self.require_project_edit():return
+        if not isinstance(path,str):path=None
+        if confirm and QMessageBox.question(self,'Replace project scene artwork','Save the dropped artwork to this mod project?')!=QMessageBox.StandardButton.Yes:return
         t=self.scene_texture()
         if not t:return
         resource=t.get('source_resource',self.scene_resource);local=t.get('source_index',t['index']);generation=self.generation
-        path,_=QFileDialog.getOpenFileName(self,'Replace scene artwork','','Artwork (*.dds *.png *.jpg *.jpeg *.tga *.bmp)')
+        if path is None:path,_=QFileDialog.getOpenFileName(self,'Replace scene artwork','','Artwork (*.dds *.png *.jpg *.jpeg *.tga *.bmp)')
         if not path:return
         try:
             if self.workspace is not resource.workspace or generation!=self.generation:raise ValueError('Source scene changed while selecting artwork')
-            from ..edits import save_scene_texture,artwork_payload
-            save_scene_texture(resource,local,artwork_payload(path,t['dds']));fresh=scene.textures(resource.blocks())
+            from ..edits import save_scene_texture,artwork_payload,scene_texture_files,named_texture_path
+            save_scene_texture(resource,local,artwork_payload(path,t['dds'],named_texture_path(resource,local) is None))
+            fresh=scene_texture_files(resource)
             if self.scene_data.get('sources'):
                 by_index={item['index']:item for item in fresh}
                 for item in self.scene_data['textures']:
                     if item.get('source_resource') is resource:item['dds']=by_index[item['source_index']]['dds']
             else:self.scene_data['textures']=fresh
-            self.show_scene(self.scene_data);self.statusBar().showMessage('Scene artwork saved. Restart the updated recomp to apply.')
+            self.show_scene(self.scene_data);self.statusBar().showMessage('Scene artwork saved in project.')
         except ValueError as exc:self.error(str(exc))
     def export_audio(self):
         if not self.current_audio:return
@@ -586,23 +667,6 @@ class Studio(QMainWindow):
         if not resources:return
         path,_=QFileDialog.getSaveFileName(self,'New audio export folder','audio-export')
         if path:self.run_job(lambda progress:audio.export_batch(resources,path,progress),lambda result:self.statusBar().showMessage(f'Exported {len(result)} WAV files and Xbox import manifest'))
-    def import_audio_folder(self):
-        workspace=self.workspace
-        if workspace is None:return
-        folder=QFileDialog.getExistingDirectory(self,'Review exported Xbox WAV folder')
-        if not folder:return
-        def review(rows):
-            if self.workspace is not workspace:return
-            if not rows:self.statusBar().showMessage('No WAV files changed from this export');return
-            dialog=QDialog(self);dialog.setWindowTitle('Review Xbox WAV replacements');dialog.resize(760,550);layout=QVBoxLayout(dialog);layout.addWidget(QLabel(f'{len(rows)} changed tracks. Select replacements to save directly to their resource folders.'))
-            scroll=QScrollArea();scroll.setWidgetResizable(True);content=QWidget();choices_layout=QVBoxLayout(content);choices=[]
-            for row in rows:
-                checkbox=QCheckBox(row['label']);checkbox.setChecked(True);checkbox.setToolTip(row['resource']);choices_layout.addWidget(checkbox);choices.append((row,checkbox))
-            scroll.setWidget(content);layout.addWidget(scroll);buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Save|QDialogButtonBox.StandardButton.Cancel);buttons.accepted.connect(dialog.accept);buttons.rejected.connect(dialog.reject);layout.addWidget(buttons)
-            if dialog.exec()==QDialog.DialogCode.Accepted and self.workspace is workspace:
-                selected=[row for row,checkbox in choices if checkbox.isChecked()]
-                self.run_job(lambda progress:audio.apply_batch(workspace,folder,selected,progress),lambda count:self.statusBar().showMessage(f'Saved {count} native WAV replacements. Restart the recomp to apply.'))
-        self.run_job(lambda progress:audio.review_batch(workspace,folder),review)
     def stop_audio(self):
         if self.audio_player:self.audio_player.stop()
     def play_audio(self):
@@ -620,14 +684,6 @@ class Studio(QMainWindow):
                 self.audio_player.errorOccurred.connect(lambda error,text:self.error(text))
             self.audio_player.setSource(QUrl.fromLocalFile(str(target)));self.audio_player.play()
         self.run_job(lambda progress:audio.export_wav(resource,target),play)
-    def import_audio(self):
-        if not self.current_audio:return
-        path,_=QFileDialog.getOpenFileName(self,'Import native PCM WAV','','WAV (*.wav)')
-        if path:
-            try:
-                from ..edits import save_audio
-                save_audio(self.current_audio,path);self.statusBar().showMessage('WAV saved directly to assets. Restart the updated recomp to apply.')
-            except ValueError as exc:self.error(str(exc))
     def undo(self):
         if self.roster:self.roster.undo();self.roster_changed()
     def export_csv(self):
@@ -639,6 +695,7 @@ class Studio(QMainWindow):
                 export(self.roster,self.roster_tables.currentText(),path);self.statusBar().showMessage('CSV and Xbox source-identity metadata exported')
             except (ValueError,OSError) as exc:self.error(str(exc))
     def import_csv(self):
+        if not self.require_project_edit(roster=True):return
         if not self.roster:return
         path,_=QFileDialog.getOpenFileName(self,'Compare Xbox roster CSV','','CSV (*.csv)')
         if not path:return
@@ -660,6 +717,7 @@ class Studio(QMainWindow):
     def copy_ratings(self):
         if self.roster and self.roster_tables.currentText()=='players' and self.roster_view.currentIndex().isValid():self.copied_ratings=list(self.roster.rows['players'][self.roster_row()]['ratings']);self.statusBar().showMessage('Copied all 30 Xbox ratings')
     def paste_ratings(self):
+        if not self.require_project_edit(roster=True):return
         if not self.roster or self.roster_tables.currentText()!='players' or self.copied_ratings is None:return
         try:
             with self.roster.transaction():
@@ -670,6 +728,7 @@ class Studio(QMainWindow):
             self.change_table('players');self.statusBar().showMessage('Ratings pasted as one undoable edit; Save roster to write changes')
         except ValueError as exc:self.error(str(exc))
     def add_uniform(self):
+        if not self.require_project_edit(roster=True):return
         if not self.roster or self.roster_tables.currentText()!='teams':return
         team=self.roster_row()
         if team<0:return
@@ -687,10 +746,12 @@ class Studio(QMainWindow):
     def redo(self):
         if self.roster:self.roster.redo();self.roster_changed()
     def save_roster(self):
+        if not self.require_project_edit(roster=True):return
         if not self.roster:return
-        try:self.roster.save(self.roster_resource.component_path());self.statusBar().showMessage('Xbox roster saved. Restart the updated recomp to apply.')
+        try:self.roster.save(self.roster_resource.component_path());self.statusBar().showMessage('Xbox roster saved in project. Export the mod folder to use it.')
         except ValueError as exc:self.error(str(exc))
     def edit_rating(self):
+        if not self.require_project_edit(roster=True):return
         if not self.roster or self.roster_tables.currentText()!='players':return
         index=self.roster_row()
         if index<0:return
@@ -699,6 +760,7 @@ class Studio(QMainWindow):
         value,ok=QInputDialog.getDouble(self,'Stored rating value','Value (stored ×100)',self.roster.rows['players'][index]['ratings'][channel-1],0,99,2)
         if ok:self.roster.set_rating(index,channel-1,value)
     def edit_palette(self):
+        if not self.require_project_edit(roster=True):return
         if not self.roster or self.roster_tables.currentText()!='teams':return
         index=self.roster_row()
         if index<0:return

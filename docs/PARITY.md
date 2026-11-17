@@ -115,3 +115,19 @@ DLLs or game were executed, and no user saves were changed in this follow-up.
 The supplied JPEG alpha is reconstructed; navigation/controller atlases remain
 Xbox. Remote acceptance is pending. Source CLI/canonical runtime validation
 accepts the new capability; existing GUI/default DLL attachment remains ABI 1.
+
+
+## Named mod folders
+
+Mod authoring supports folder export for named DDS files. Original encodings and dimensions are retained; scenario-specific runtime acceptance is separate.
+
+## 0.2.0 authoring coverage
+
+| Workflow | Export surface |
+| --- | --- |
+| Existing textures | Standalone DDS or named DDS slots |
+| One-image courts | Runtime-generated source-bound CPU/GPU floor pair |
+| New X/Y/Z uniforms | Native-validated Home-derived world/selection pair |
+| Roster editing | Attached native save body with its aggregate header |
+| 3D previews | Original or project SCNE browser |
+| Code mods | External compiled SDK extension attachment |

@@ -87,7 +87,10 @@
           "lifecycle.runtime.ready",
           "lifecycle.runtime.stopping",
           "data.player.weight.read",
-          "data.player.weight.pending_write"
+          "data.player.weight.pending_write",
+          "hook.presentation.button_style",
+          "court.scene",
+          "cloth.simulation"
         ]
       }
     },
@@ -148,7 +151,7 @@
               "capabilities": {
                 "type": "array",
                 "minItems": 1,
-                "maxItems": 6,
+                "maxItems": 7,
                 "uniqueItems": true,
                 "items": {
                   "enum": [
@@ -157,7 +160,8 @@
                     "lifecycle.runtime.ready",
                     "lifecycle.runtime.stopping",
                     "data.player.weight.read",
-                    "data.player.weight.pending_write"
+                    "data.player.weight.pending_write",
+                    "hook.presentation.button_style"
                   ]
                 }
               },
@@ -330,17 +334,23 @@
           "record_type": {
             "enum": [
               1547079785,
-              3798768477
+              3798768477,
+              3776073491
             ]
           },
           "kind": {
             "enum": [
               "dds.replace",
-              "cloth.positions"
+              "cloth.positions",
+              "court.scene",
+              "cloth.simulation"
             ]
           },
           "component": {
-            "const": 0
+            "enum": [
+              0,
+              1
+            ]
           },
           "target": {
             "type": "string",
@@ -355,6 +365,15 @@
           },
           "sha256": {
             "$ref": "#/$defs/hash"
+          },
+          "selection": {
+            "const": "presentation.playstation",
+            "description": "SDK Button Style conditional DDS. Requires the primary and stick atlases, with an optional navigation atlas."
+          },
+          "texture_slot": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4095
           }
         },
         "allOf": [
@@ -365,7 +384,7 @@
               ],
               "properties": {
                 "kind": {
-                  "const": "cloth.positions"
+                  "const": "cloth.simulation"
                 }
               }
             },
@@ -375,37 +394,173 @@
               ],
               "properties": {
                 "record_type": {
-                  "const": 3798768477
+                  "const": 3776073491
+                },
+                "bank_hash": {
+                  "const": 4198237405
+                },
+                "component": {
+                  "const": 0
                 },
                 "target": {
-                  "pattern": "^assets/[^/]+\\.iff/[^/]+\\.scne/block0\\.dat$"
+                  "pattern": "^assets/cloth_shorts\\.iff/shorts(?:fat|reg|thin)\\.e1124f13/resource_data\\.dat$"
                 },
                 "file": {
                   "pattern": "^assets/.+\\.dat$"
                 }
+              },
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "selection"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "texture_slot"
+                    ]
+                  }
+                ]
               }
             },
             "else": {
-              "not": {
+              "if": {
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "cloth.positions"
+                  }
+                }
+              },
+              "then": {
                 "required": [
                   "component"
-                ]
+                ],
+                "properties": {
+                  "record_type": {
+                    "const": 3798768477
+                  },
+                  "target": {
+                    "pattern": "^assets/[^/]+\\.iff/[^/]+\\.scne/(?:block0|scene)\\.dat$"
+                  },
+                  "file": {
+                    "pattern": "^assets/.+\\.dat$"
+                  },
+                  "component": {
+                    "const": 0
+                  }
+                }
               },
+              "else": {
+                "if": {
+                  "required": [
+                    "kind"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "const": "court.scene"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "component"
+                  ],
+                  "properties": {
+                    "record_type": {
+                      "const": 3798768477
+                    },
+                    "record_id": {
+                      "const": 3192247854
+                    },
+                    "target": {
+                      "pattern": "^assets/[^/]+\\.iff/[^/]+\\.scne/(?:block[01]|scene(?:_gpu)?)\\.dat$"
+                    },
+                    "file": {
+                      "pattern": "^assets/.+\\.dat$"
+                    }
+                  },
+                  "not": {
+                    "required": [
+                      "selection"
+                    ]
+                  }
+                },
+                "else": {
+                  "if": {
+                    "required": [
+                      "texture_slot"
+                    ]
+                  },
+                  "then": {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "component"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "selection"
+                          ]
+                        }
+                      ]
+                    },
+                    "properties": {
+                      "target": {
+                        "pattern": "^assets/[^/]+\\.(?:iff|cdf)/[^/]+\\.(?:txtr|scne)/(?:_support/)?[^/]+\\.dds$"
+                      },
+                      "file": {
+                        "pattern": "^assets/.+\\.dds$"
+                      }
+                    }
+                  },
+                  "else": {
+                    "not": {
+                      "required": [
+                        "component"
+                      ]
+                    },
+                    "properties": {
+                      "record_type": {
+                        "const": 1547079785
+                      },
+                      "target": {
+                        "pattern": "^assets/[^/]+\\.iff/[^/]+\\.txtr/texture\\.dds$"
+                      },
+                      "file": {
+                        "pattern": "^assets/.+\\.dds$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "texture_slot"
+              ]
+            },
+            "then": {
               "properties": {
-                "record_type": {
-                  "const": 1547079785
-                },
-                "target": {
-                  "pattern": "^assets/[^/]+\\.iff/[^/]+\\.txtr/texture\\.dds$"
-                },
-                "file": {
-                  "pattern": "^assets/.+\\.dds$"
+                "kind": {
+                  "const": "dds.replace"
                 }
               }
             }
           }
         ]
       }
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 4096
     }
   },
   "allOf": [
@@ -553,6 +708,64 @@
         "required": [
           "extensions"
         ]
+      },
+      "then": {
+        "properties": {
+          "requires": {
+            "properties": {
+              "mod_api": {
+                "const": "1.3.0"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "assets": {
+            "contains": {
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "court.scene"
+                }
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "requires": {
+            "properties": {
+              "mod_api": {
+                "const": "1.3.0"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "assets": {
+            "contains": {
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "cloth.simulation"
+                }
+              }
+            }
+          }
+        }
       },
       "then": {
         "properties": {

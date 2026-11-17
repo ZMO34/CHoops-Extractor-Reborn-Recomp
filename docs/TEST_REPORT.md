@@ -191,3 +191,12 @@ with the aligned aggregate header exported as both a native save and a
 roster-only mod. Activation on a separate copy cleared unlock codes and
 applied the requested neckline. Source files remained read-only. Gameplay
 rendering and in-game selection were outside the offline checks.
+
+## 0.2.2 stock uniform checks
+
+Offline retail validation built Albany Home and Away world and selection overrides.
+The launcher resolver and sparse overlay preparation retained all four stock
+bank IDs, wrote independent native DDS bindings, and preserved the installed
+source files. World replacements generated BC5 jersey and shorts normals and
+BC4 material maps. Selection generated the BC5 jersey normal. Gameplay
+appearance remains unverified.

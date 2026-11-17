@@ -184,3 +184,7 @@ Existing textures retain catalog identities and source hashes. Full courts bind 
 ## Uniform bumps and indexed atlases
 
 All 452 retail Home world banks inspected contain case-sensitive TXTR IDs `unifbump` (0x20d15abf), `shortbump` (0x582c779c), `jersey_numbers` (0x3e0620f6), and `names` (0xf2334940). The 452 selection banks contain `unifbump` and `jersey_numbers`. Generated bumps use the verified BC5 descriptors. The world `unif` and `short` records hold single-channel BC4 material masks in the inspected banks. Studio preserves the stock material layout and modulates it with local artwork detail. The selection `unif` record can instead hold BC1 color. The native roster validator supports aggregate title fields at offsets 316 and 320 and clears the corresponding owner field in exported headers. For cloned atlases, the validator permits changes inside the indexed mip data and ARGB palette and checks the source descriptor, alignment padding, and all other component bytes.
+
+## Stock uniform overrides
+
+A replacement targets the same case-sensitive canonical filename and stock bank hash as its template. The validator checks the original layout and preserves the roster route, while rekeying compressed textures with visually equivalent BC blocks to isolate shared stock pixel identities. The cooked layout retains its stock catalog entry.

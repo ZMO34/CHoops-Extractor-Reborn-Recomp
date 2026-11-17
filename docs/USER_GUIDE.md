@@ -186,3 +186,9 @@ To replace sheets on an existing uniform, copy the corresponding bank into your 
 In the **Roster** tab, attach a native `Roster.ROS` and its aggregate header through **Mod Projects**. **Export roster as mod** creates a roster-only mod folder. **Export roster save** creates a fresh folder containing the edited `Roster.ROS` and its portable header. **Choose player shoes** edits brand, style, and Home/Away color for the selected player. The verified roster has no separate alternate shoe fields.
 
 With active mods, the launcher clears unlock codes and makes installed alternate pairs available on supported native roster saves. A new route inherits its Home uniform characteristics, with the alternate wizard's neckline applied if specified. Install a native roster save in the recomp first when using new alternate banks.
+
+## Replace a stock uniform
+
+In **Mods / Mod Projects**, choose **Build or replace uniform**, then select a team and **Home (UH)**, **Away (UA)**, or an alternate. A routed stock uniform is replaced in the mod overlay, including its selection bank. A vacant X/Y/Z slot is built from Home. Drop the artwork you want to change. A replacement can edit just one garment or sheet, while a new alternate needs world jersey and shorts artwork. Automatic BC5 bumps and BC4 material maps are enabled for each supplied garment. Use the roster editor for stock neckline changes.
+
+Export the mod folder and install it in the launcher with the matching 0.2.2 native tools. When multiple teams share the same bank or roster route, use an independently routed bank for a team-specific replacement.

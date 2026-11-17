@@ -135,3 +135,7 @@ Mod authoring supports folder export for named DDS files. Original encodings and
 ## 0.2.1 uniform artwork
 
 Studio supports optional indexed number and surname replacements for new alternate banks and named-sheet replacements on existing banks. Glyph placement and spacing are inherited for exported artwork. The alternate builder supports five authored neck shapes. The native save exposes one player shoe brand and style and two color fields. Per-alternate footwear and in-game visual parity remain pending.
+
+## 0.2.2 stock uniform authoring
+
+The builder generates the same verified bump and material maps for replacements and new pairs. Replacement support covers uniquely routed stock world/selection banks; shared artwork routing and live gameplay remain outside the verified workflow.

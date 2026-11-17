@@ -189,6 +189,10 @@ Studio stages existing texture edits, one-image court component pairs and eligib
 
 Alternate projects derive template-sized BC5 normals and BC4 jersey and shorts material maps by default, show dropped artwork in 3D, offer a neckline override, and can replace world numbers, selection numbers, and surname artwork. Existing uniform sheets use named DDS replacement in mod-folder export. Alternate sheets require an updated native validator. Roster export supports mod folders and native save/header pairs. Player shoe selection uses the verified Home/Away fields.
 
+## 0.2.2 stock uniform replacement
+
+Studio authors existing UH, UA, and routed alternate banks alongside new X/Y/Z pairs. Stock uniform replacements preserve the original world and selection bank identities in the runtime overlay and receive private BC texture identities.
+
 
 ---
 
@@ -329,6 +333,10 @@ Mod authoring supports folder export for named DDS files. Original encodings and
 ## 0.2.1 uniform artwork
 
 Studio supports optional indexed number and surname replacements for new alternate banks and named-sheet replacements on existing banks. Glyph placement and spacing are inherited for exported artwork. The alternate builder supports five authored neck shapes. The native save exposes one player shoe brand and style and two color fields. Per-alternate footwear and in-game visual parity remain pending.
+
+## 0.2.2 stock uniform authoring
+
+The builder generates the same verified bump and material maps for replacements and new pairs. Replacement support covers uniquely routed stock world/selection banks; shared artwork routing and live gameplay remain outside the verified workflow.
 
 
 ---
@@ -526,3 +534,12 @@ with the aligned aggregate header exported as both a native save and a
 roster-only mod. Activation on a separate copy cleared unlock codes and
 applied the requested neckline. Source files remained read-only. Gameplay
 rendering and in-game selection were outside the offline checks.
+
+## 0.2.2 stock uniform checks
+
+Offline retail validation built Albany Home and Away world and selection overrides.
+The launcher resolver and sparse overlay preparation retained all four stock
+bank IDs, wrote independent native DDS bindings, and preserved the installed
+source files. World replacements generated BC5 jersey and shorts normals and
+BC4 material maps. Selection generated the BC5 jersey normal. Gameplay
+appearance remains unverified.

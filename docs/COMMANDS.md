@@ -125,3 +125,7 @@ The alternate command accepts optional `--numbers WORLD.png`, `--selection-numbe
 
 - `choops-recomp mod roster-save PROJECT NEW_FOLDER --runtime RECOMP` exports the save and aggregate header.
 - `choops-recomp mod export PROJECT NEW_FOLDER --roster-only --runtime RECOMP` exports a folder containing only the attached roster.
+
+### Stock uniform replacements
+
+`choops-recomp mod uniform PROJECT TEAM_INDEX H JERSEY SHORTS --runtime RECOMP` replaces Home. Use `A` for Away or `X`, `Y`, or `Z` for an existing or vacant alternate. The command accepts the same optional artwork and map flags as `mod alternate`.

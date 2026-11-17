@@ -1,5 +1,10 @@
 # Changes
 
+## 0.2.2
+
+- Build uniform artwork mods for Home, Away, and existing X/Y/Z slots with automatic bump and material maps.
+- Replace verified stock world and selection banks in the runtime overlay while preserving their names and roster routes.
+
 ## 0.2.1
 
 - Generate BC5 bump and BC4 material maps for alternate jerseys and shorts from dropped artwork.

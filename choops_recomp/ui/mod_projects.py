@@ -24,7 +24,7 @@ class ModProjects(QWidget):
         for title,fn in [('Add source bank copy',self.add_bank),('Edit project copies',self.edit),('Compare selected texture',self.compare)]:
             b=QPushButton(title);b.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(b)
         row=QHBoxLayout();layout.addLayout(row)
-        for title,fn in [('Build one-image court…',self.court),('Add X/Y/Z jersey…',self.alternate),('Review differences',self.review),('Export Mod Folder…',self.export)]:
+        for title,fn in [('Build one-image court…',self.court),('Build or replace uniform…',self.alternate),('Review differences',self.review),('Export Mod Folder…',self.export)]:
             b=QPushButton(title);b.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(b)
         row=QHBoxLayout();layout.addLayout(row)
         for title,fn in [('Attach native roster + header…',self.roster),('Attach prepared uniform bank…',self.uniform),('Attach external DLL…',self.extension)]:
@@ -180,7 +180,7 @@ class ModProjects(QWidget):
         if len(paths) != 1:
             raise ValueError('The installed Xbox English roster template is missing or ambiguous')
         model = Roster(paths[0].read_bytes())
-        dialog, layout = self.author_dialog('Add X/Y/Z jersey')
+        dialog, layout = self.author_dialog('Build or replace uniform')
         team = QComboBox()
         team.setEditable(True)
         team.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
@@ -188,7 +188,7 @@ class ModProjects(QWidget):
             team.addItem(row['school_name'] or row['short_name'], row['index'])
         layout.addWidget(team)
         variant = QComboBox()
-        variant.addItems(['X — Alternate 1', 'Y — Alternate 2', 'Z — Alternate 3'])
+        variant.addItems(['Home — UH', 'Away — UA', 'X — Alternate 1', 'Y — Alternate 2', 'Z — Alternate 3'])
         layout.addWidget(variant)
         jersey = self.artwork_field(layout, 'World jersey artwork')
         shorts = self.artwork_field(layout, 'World shorts artwork')
@@ -202,8 +202,30 @@ class ModProjects(QWidget):
         for index, label in enumerate(('U', 'V', 'V triangle', 'Triangle', 'Wishbone')):
             neck.addItem(label, index)
         layout.addWidget(neck)
+        from .. import uniforms
+        routes = {(row['owner'], row['variant']): row for row in uniforms.rows(model)}
+
+        def current_route():
+            index = team.findText(team.currentText())
+            if index < 0:
+                return None, None
+            owner = uniforms.owner(model, team.itemData(index))
+            routed = routes.get((owner, variant.currentIndex()))
+            template = routed or (routes.get((owner, 0)) if variant.currentIndex() >= 2 else None)
+            return routed, template
+
+        def update_neck(*_):
+            routed, template = current_route()
+            neck.setEnabled(routed is None and template is not None)
+            if not neck.isEnabled():
+                neck.setCurrentIndex(0)
+            neck.setItemText(0, 'Keep stock neckline' if routed is not None else 'Use Home neckline')
+
+        team.currentTextChanged.connect(update_neck)
+        variant.currentIndexChanged.connect(update_neck)
+        update_neck()
         if not self.studio.offscreen:
-            self.add_alternate_preview(dialog, layout, project, model, team, neck, jersey, shorts)
+            self.add_alternate_preview(dialog, layout, project, team, variant, neck, jersey, shorts, current_route)
         bumps = QCheckBox('Generate jersey and shorts bump and material maps')
         bumps.setChecked(True)
         layout.addWidget(bumps)
@@ -211,19 +233,19 @@ class ModProjects(QWidget):
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
         team_index = team.findText(team.currentText())
-        if team_index < 0 or not jersey.text() or not shorts.text():
-            raise ValueError('Choose a team and both world artwork files')
-        index, slot = team.itemData(team_index), variant.currentIndex() + 2
-        inputs = jersey.text(), shorts.text(), selection.text() or None
+        if team_index < 0:
+            raise ValueError('Choose a team')
+        index, slot = team.itemData(team_index), variant.currentIndex()
+        inputs = jersey.text() or None, shorts.text() or None, selection.text() or None
         options = dict(numbers=numbers.text() or None, selection_numbers=selection_numbers.text() or None,
                        lettering=lettering.text() or None, logo=logo.text() or None,
                        generate_bumps=bumps.isChecked(), neck_shape=neck.currentData())
-        self.studio.run_job(lambda _:project.create_alternate(index, slot, *inputs, **options),
+        self.studio.run_job(lambda _:project.stage_uniform(index, slot, *inputs, **options),
                             lambda names:self.feature_saved(project, 'Saved ' + ' and '.join(names) + ' to the project.'))
 
-    def add_alternate_preview(self, dialog, layout, project, model, team, neck, jersey, shorts):
+    def add_alternate_preview(self, dialog, layout, project, team, variant, neck, jersey, shorts, current_route):
         from PySide6.QtCore import QTimer
-        from .. import uniform_preview, uniforms
+        from .. import uniform_preview
         from ..workspace import Workspace
         from .scene_view import SceneView
 
@@ -233,7 +255,6 @@ class ModProjects(QWidget):
         generation = 0
         pending = False
         workspace = None
-        homes = {r['owner']: r for r in uniforms.rows(model) if r['variant'] == 0}
         timer = QTimer(dialog)
         timer.setSingleShot(True)
         timer.setInterval(180)
@@ -246,10 +267,9 @@ class ModProjects(QWidget):
         def render():
             nonlocal pending
             artwork = {'jersey': jersey.text(), 'shorts': shorts.text()}
-            index = team.currentData()
-            if pending or index is None or not any(artwork.values()) or not dialog.isVisible():
+            if pending or not any(artwork.values()) or not dialog.isVisible():
                 return
-            row = homes.get(uniforms.owner(model, index))
+            _, row = current_route()
             if row is None:
                 return
             shape = neck.currentData()
@@ -285,7 +305,8 @@ class ModProjects(QWidget):
         timer.timeout.connect(render)
         for field in (jersey, shorts):
             field.textChanged.connect(schedule)
-        team.currentIndexChanged.connect(schedule)
+        team.currentTextChanged.connect(schedule)
+        variant.currentIndexChanged.connect(schedule)
         neck.currentIndexChanged.connect(schedule)
         dialog.resize(820, 720)
 

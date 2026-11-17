@@ -356,14 +356,24 @@ class ModProject:
 
     def create_alternate(self, team, variant, jersey, shorts, selection=None, *,
                          numbers=None, selection_numbers=None, lettering=None, logo=None, generate_bumps=True, neck_shape=None):
-        """Create and validate a world/selection pair from the team's Home art."""
+        """Create an alternate from the team's Home art."""
+        if variant not in (2, 3, 4):
+            raise ValueError('Choose X, Y or Z')
+        return self.stage_uniform(team, variant, jersey, shorts, selection, numbers=numbers,
+                                  selection_numbers=selection_numbers, lettering=lettering, logo=logo,
+                                  generate_bumps=generate_bumps, neck_shape=neck_shape, replace_existing=False)
+
+    def stage_uniform(self, team, variant, jersey, shorts, selection=None, *,
+                      numbers=None, selection_numbers=None, lettering=None, logo=None,
+                      generate_bumps=True, neck_shape=None, replace_existing=True):
+        """Replace a routed uniform pair or create a vacant alternate from Home."""
         from . import dds, uniform_fonts, uniforms
         from .edits import artwork_payload
         from .roster import Roster
         import zlib
 
-        if variant not in (2, 3, 4):
-            raise ValueError('Choose X, Y or Z')
+        if variant not in range(5):
+            raise ValueError('Choose Home, Away, X, Y or Z')
         if neck_shape is not None and (type(neck_shape) is not int or not 0 <= neck_shape < 5):
             raise ValueError('Choose a supported Xbox neckline')
         self.check_source()
@@ -374,30 +384,56 @@ class ModProject:
         if uniforms.owners(model, owner) != [team]:
             raise ValueError('This team shares uniform routing. Use a source-bound native roster for independent routing.')
         rows = uniforms.rows(model)
-        homes = [row for row in rows if row['owner'] == owner and row['variant'] == 0]
-        if len(homes) != 1:
-            raise ValueError('This team has no unique Home uniform template')
-        template, = homes
+        routed = [row for row in rows if row['owner'] == owner and row['variant'] == variant]
+        replacing = bool(routed)
+        if replacing and not replace_existing:
+            raise ValueError('The alternate slot already exists. Use uniform to replace its artwork.')
+        if replacing and not any((jersey, shorts, selection, numbers, selection_numbers, lettering, logo)):
+            raise ValueError('Supply at least one artwork file for the replacement')
+        if not replacing and (not jersey or not shorts):
+            raise ValueError('New alternates require both world jersey and shorts artwork')
+        if not replacing and variant < 2:
+            raise ValueError('This team has no routed stock uniform for that slot')
+        templates = routed or [row for row in rows if row['owner'] == owner and row['variant'] == 0]
+        if len(templates) != 1:
+            raise ValueError('This team has no unique uniform template')
+        template, = templates
         asset = template['asset']
-        owners = {row['owner'] for row in rows if row['asset'] == asset and row['variant'] in (0, 1)
+        matching_variants = (variant,) if replacing else (0, 1)
+        owners = {row['owner'] for row in rows if row['asset'] == asset and row['variant'] in matching_variants
                   and uniforms.owners(model, row['owner'])}
         if owners != {owner}:
-            raise ValueError('This artwork ID is shared across teams and cannot be linked automatically')
-        if any(row['owner'] == owner and row['variant'] == variant for row in rows):
-            raise ValueError('The alternate slot already exists. Edit its textures as an existing asset.')
-        with tempfile.TemporaryDirectory(prefix='.alternate-', dir=self.root) as tmp:
-            pair = uniforms.clone_pair(stock, template, asset, variant, Path(tmp))
+            raise ValueError('This artwork is shared across teams. Use independently routed artwork.')
+        if replacing and neck_shape is not None:
+            raise ValueError('Use the roster editor to change the neckline of an existing uniform')
+        with tempfile.TemporaryDirectory(prefix='.uniform-', dir=self.root) as tmp:
+            pair = uniforms.clone_pair(stock, template, asset, variant, Path(tmp), replace=replacing)
             state = copy.deepcopy(self.state)
             changes = {}
             for bank, inputs in zip(pair, ((jersey, shorts), (selection or jersey,))):
                 layout = read_json(bank / 'asset.json')
                 identity = layout['identity']
+                previous = next((entry for entry in state['manifest'].get('uniforms', [])
+                                 if entry['name'] == bank.name), None)
+                if replacing and previous:
+                    # A later partial import keeps artwork already saved for this pair.
+                    if previous['template_hash'] != identity['template_hash']:
+                        raise ValueError('The existing project uniform uses a different template')
+                    for file in previous['files']:
+                        target = safe(bank, file['path'])
+                        source = safe(self.package_root, previous['folder'] + '/' + file['path'])
+                        data = source.read_bytes()
+                        if sha(data) != file['sha256'] or not target.is_file():
+                            raise ValueError('The existing project uniform inventory changed')
+                        target.write_bytes(data)
                 bound = {texture['record']: texture for texture in layout['textures']}
                 is_selection = bank.name.startswith('sel')
                 for names, bump, artwork in zip(
                     (('unifregion', 'unif'), ('shortregion', 'short')),
                     ('unifbump', 'shortbump'), inputs,
                 ):
+                    if artwork is None:
+                        continue
                     for name in names:
                         matches = [r for r in layout['records']
                                    if r['id'] == zlib.crc32(name.encode()) and r['index'] in bound]
@@ -412,6 +448,8 @@ class ModProject:
                     target = bank / bound[matches[0]['index']]['path']
                     before = target.read_bytes()
                     payload = artwork_payload(artwork, before)
+                    if is_selection and dds.info(payload)['fourcc'] != dds.info(before)['fourcc']:
+                        payload = dds.encode_image(dds.image(payload), before)
                     dds.replace(target, payload, before)
                     if generate_bumps:
                         bump_slots = [bound[r['index']] for r in layout['records']
@@ -440,7 +478,7 @@ class ModProject:
                             if dds.info(template)['fourcc'] == 'ATI1':
                                 result = dds.material_from_artwork(color, template)
                             elif is_selection:
-                                result = artwork_payload(artwork, template)
+                                result = payload if dds.info(payload)['fourcc'] == dds.info(template)['fourcc'] else dds.encode_image(color, template)
                             else:
                                 raise ValueError(f'Unsupported {material_name} material format in {bank.name}')
                             dds.replace(material, result, template)

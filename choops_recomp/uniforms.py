@@ -203,7 +203,7 @@ def create(workspace,model,roster_resource,team,variant,asset,template_index=Non
         raise
 
 
-def clone_pair(workspace, template, asset, variant, destination):
+def clone_pair(workspace, template, asset, variant, destination, *, replace=False):
     """Clone two source banks with independent BC identities and no roster writes."""
     from tempfile import TemporaryDirectory
 
@@ -215,7 +215,11 @@ def clone_pair(workspace, template, asset, variant, destination):
         for selection in (False,True):
             source_name=name(template['asset'],template['variant'],selection);target_name=name(asset,variant,selection)
             source_hash=zlib.crc32(source_name.upper().encode())&0xffffffff;target_hash=zlib.crc32(target_name.upper().encode())&0xffffffff
-            if target_hash in workspace.by_hash:raise ValueError('Uniform or selection asset already exists: '+target_name)
+            if replace:
+                if source_name != target_name:
+                    raise ValueError('Uniform replacement must use its own vanilla template')
+            elif target_hash in workspace.by_hash:
+                raise ValueError('Uniform or selection asset already exists: '+target_name)
             if source_hash not in workspace.by_hash:raise ValueError('Required Xbox template is missing: '+source_name)
             entry,layout=workspace.by_hash[source_hash];source=workspace.safe(entry['folder']);target=destination/target_name
             if target.exists():raise ValueError('New asset folder already exists')

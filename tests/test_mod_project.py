@@ -64,6 +64,7 @@ def test_named_texture_exports_and_installs_as_a_mod_folder(author,tmp_path):
     named=old.with_name('diffuse_12345678.dds')
     old.rename(named)
     relative=named.relative_to(game).as_posix()
+    vanilla=named.read_bytes()
     layout['textures']=[]
     write_json(layout_path,layout)
     write_json(game/'scene_textures.json',dict(version=1,scenes=[
@@ -86,7 +87,7 @@ def test_named_texture_exports_and_installs_as_a_mod_folder(author,tmp_path):
     assert result['assets'][0]['texture_slot']==0
     assert result['assets'][0]['target']==result['assets'][0]['file']==relative
     assert (output/relative).read_bytes()==edited
-    assert named.read_bytes()!=edited
+    assert named.read_bytes()==vanilla
     script=tmp_path/'check-folder.ps1'
     script.write_text("""
 param($Backend,$Folder,$Game,$Mods,$Cache,$Tool)
@@ -99,7 +100,7 @@ $staged=New-ChmodCache $Game $Cache $plan {
     $proof=& $Tool prepare $Root | ConvertFrom-Json
     if($LASTEXITCODE -ne 0 -or $proof.scene_dds_edits -ne 1){throw 'Named DDS did not reach the runtime overlay'}
 }
-[pscustomobject]@{installed=(Join-Path $Mods 'test.named');stage=$staged}|ConvertTo-Json -Compress
+[pscustomobject]@{installed=(Join-Path $Mods 'test.named');payload=$plan.replacements[0].file;stage=$staged}|ConvertTo-Json -Compress
 """,encoding='utf-8')
     run=subprocess.run(['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(script),
                         str(runtime/'tools/chmod.ps1'),str(output),str(game),str(tmp_path/'mods'),
@@ -108,8 +109,11 @@ $staged=New-ChmodCache $Game $Cache $plan {
     assert run.returncode==0,run.stdout+run.stderr
     proof=json.loads(run.stdout)
     assert (Path(proof['installed'])/'mod.json').is_file()
+    payload=Path(proof['payload'])
+    assert payload.is_relative_to(Path(proof['installed']))
+    assert payload.read_bytes()==edited
     assert (Path(proof['stage'])/relative).read_bytes()==edited
-    assert named.read_bytes()!=edited
+    assert named.read_bytes()==vanilla
 
 
 

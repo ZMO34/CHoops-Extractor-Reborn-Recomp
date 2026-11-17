@@ -1,5 +1,11 @@
 # Changes
 
+## 0.2.3
+
+- Remember the installed assets and Mods folders.
+- Open mod folders as working projects and combine or separate package content.
+- Browse named textures and registered XYZ banks in imported projects.
+
 ## 0.2.2
 
 - Build uniform artwork mods for Home, Away, and existing X/Y/Z slots with automatic bump and material maps.

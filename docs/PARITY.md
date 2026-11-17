@@ -139,3 +139,7 @@ Studio supports optional indexed number and surname replacements for new alterna
 ## 0.2.2 stock uniform authoring
 
 The builder generates the same verified bump and material maps for replacements and new pairs. Replacement support covers uniquely routed stock world/selection banks; shared artwork routing and live gameplay remain outside the verified workflow.
+
+## 0.2.3 mod folder round trips
+
+Mod folders preserve registered uniform pairs, named texture identities, conditional texture metadata, and supplied payloads. Combined projects require disjoint content. A separated project keeps the selected group intact. Some payloads are carried through export without an editor.

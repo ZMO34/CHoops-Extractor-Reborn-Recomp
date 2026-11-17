@@ -43,7 +43,8 @@ class Resource:
     @property
     def label(self):
         from .identities import RECORD_LABELS
-        bank=self.workspace.labels.get(self.entry['hash'],self.bank);record=RECORD_LABELS.get(self.record['id'],f"{self.record['id']:08x}")
+        bank = self.workspace.labels.get(self.entry['hash'], self.bank)
+        record = RECORD_LABELS.get(self.record['id']) or self.record.get('name') or f"{self.record['id']:08x}"
         return f"{bank} / {record}"
     def blocks(self):
         result=[]

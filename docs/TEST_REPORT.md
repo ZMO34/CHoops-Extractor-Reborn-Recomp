@@ -200,3 +200,17 @@ bank IDs, wrote independent native DDS bindings, and preserved the installed
 source files. World replacements generated BC5 jersey and shorts normals and
 BC4 material maps. Selection generated the BC5 jersey normal. Gameplay
 appearance remains unverified.
+
+## Texture mod folder verification
+
+The named non-uniform texture test checks that the resolver selects the
+installed mod file, that its bytes reach the separate runtime cache, and
+that the vanilla DDS remains byte-identical. Five native texture tests also
+passed for named, embedded, and indexed DDS handling.
+
+## 0.2.3 mod project checks
+
+The 164-test Windows suite passed. Offline checks imported, combined, and
+separated the installed Georgia floor, shorter shorts, and button art packages.
+The Albany X world and selection banks were opened in the project browser and
+exported through the runtime resolver. In-game appearance remains unverified.

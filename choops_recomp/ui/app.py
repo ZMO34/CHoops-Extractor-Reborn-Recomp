@@ -276,7 +276,7 @@ class Studio(QMainWindow):
         if not self.offscreen:QMessageBox.warning(self,'CHoops Recomp Studio',text)
     def choose_assets(self):
         if not self.maybe_save():return
-        path=QFileDialog.getExistingDirectory(self,'Open Xbox recomp assets folder')
+        path=QFileDialog.getExistingDirectory(self,'Open Xbox recomp assets folder',self.mod_projects.settings.value('assets',''))
         if path:self.open_assets(path)
     def maybe_save(self):
         if not self.roster or bytes(self.roster.data)==self.roster.original:return True
@@ -301,7 +301,13 @@ class Studio(QMainWindow):
         if loader is None and project and Path(path).resolve()==project.edit/'assets':loader=project.workspace
         self.cancel_index();self.cancel_loading.setEnabled(True)
         self.workspace_generation+=1;generation=self.workspace_generation;self.statusBar().showMessage('Reading Xbox assets…')
-        self.index_job=self.run_job(lambda progress:(loader or Workspace)(path,progress),lambda result:self.loaded(result) if generation==self.workspace_generation else None)
+        def finished(result):
+            if generation != self.workspace_generation:
+                return
+            if loader is None:
+                self.mod_projects.settings.setValue('assets', str(result.assets))
+            self.loaded(result)
+        self.index_job=self.run_job(lambda progress:(loader or Workspace)(path,progress),finished)
     def cancel_index(self):
         job=getattr(self,'index_job',None)
         if job in self.jobs:job.cancelled=True
@@ -859,10 +865,15 @@ class Studio(QMainWindow):
 
 
 def main(argv=None):
-    parser=argparse.ArgumentParser();parser.add_argument('--assets');parser.add_argument('--smoke',action='store_true');parser.add_argument('--smoke-dialogs',action='store_true');parser.add_argument('--report');args=parser.parse_args(argv)
+    parser=argparse.ArgumentParser();parser.add_argument('--assets');parser.add_argument('--mods');parser.add_argument('--default-assets');parser.add_argument('--smoke',action='store_true');parser.add_argument('--smoke-dialogs',action='store_true');parser.add_argument('--report');args=parser.parse_args(argv)
     if args.smoke_dialogs and (not args.smoke or not args.assets or os.environ.get('QT_QPA_PLATFORM')!='offscreen'):parser.error('--smoke-dialogs requires --smoke, --assets and QT_QPA_PLATFORM=offscreen')
     app=QApplication.instance() or QApplication([]);app.setStyle('Fusion');window=Studio(offscreen=os.environ.get('QT_QPA_PLATFORM')=='offscreen');window.show()
-    if args.assets:window.open_assets(args.assets)
+    if args.mods and not window.mod_projects.settings.value('mods', ''):
+        window.mod_projects.settings.setValue('mods', args.mods)
+    assets = args.assets or (window.mod_projects.settings.value('assets', '') or args.default_assets
+                             if not args.smoke else '')
+    if assets and Path(assets).is_dir():
+        window.open_assets(assets)
     if args.smoke:
         def finish():
             if window.jobs:QTimer.singleShot(100,finish);return

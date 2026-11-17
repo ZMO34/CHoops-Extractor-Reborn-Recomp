@@ -165,6 +165,163 @@ class ModProject:
             write_json(stage/'project.json',state);os.rename(stage,destination)
         return cls(destination, contract.root)
 
+    @classmethod
+    def import_folders(cls, destination, assets, runtime, folders, *,
+                       identity=None, groups=None):
+        """Create a working project from one or more installed mod packages."""
+        from jsonschema import Draft202012Validator
+
+        folders = [Path(folder).absolute() for folder in folders]
+        if not folders:
+            raise ValueError('Select at least one mod folder')
+        manifests = [read_json(safe(folder, 'mod.json')) for folder in folders]
+        validator = Draft202012Validator(read_json(DATA/'chmod.schema.json'))
+        for manifest in manifests:
+            validator.validate(manifest)
+        primary = manifests[0]
+        destination = Path(destination).resolve()
+        source = Path(assets).resolve().parent
+        if destination.exists() or destination.is_relative_to(source) or any(
+            destination.is_relative_to(folder.resolve()) for folder in folders
+        ):
+            raise ValueError('Choose a new project folder outside the game assets and input mods')
+        if (len(folders) > 1 or groups is not None) and identity is None:
+            raise ValueError('Choose a new mod ID for combined or separated projects')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='.studio-import-', dir=destination.parent) as temp:
+            project = cls.create(Path(temp)/'project', assets, runtime, *(identity or (
+                primary['id'], primary['name'], primary['author'])))
+            merged = copy.deepcopy(primary)
+            if identity:
+                merged.update(zip(('id', 'name', 'author'), identity))
+                merged['version'] = '1.0.0'
+                merged.pop('update_source', None)
+            merged['assets'] = []
+            for key in ('roster', 'uniforms', 'extensions'):
+                merged.pop(key, None)
+            seen = set()
+            uniform_names = set()
+            stock_catalog = read_json(project.source/'assets.json', 32*1024*1024)
+            stock_entries = {e['hash']: e for e in stock_catalog['entries']}
+            used = {}
+            editable_assets = []
+            total = 0
+
+            def checked_file(folder, relative, digest):
+                nonlocal total
+                path = safe(folder, relative)
+                size = path.stat().st_size
+                total += size
+                if size > 128 * 1024 * 1024 or total > LIMIT:
+                    raise ValueError('Selected mod payload exceeds the supported size')
+                data = path.read_bytes()
+                if sha(data) != digest:
+                    raise ValueError('Mod payload digest differs for ' + relative)
+                return data
+
+            def attach(relative, data):
+                key = relative.casefold()
+                if key in used:
+                    raise ValueError('Packages use the same payload path: ' + relative)
+                used[key] = relative
+                path = safe(project.package_root, relative)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+
+            for folder, manifest in zip(folders, manifests):
+                if manifest['requires']['xex_sha256'] != primary['requires']['xex_sha256']:
+                    raise ValueError('The mod folders target different game revisions')
+                if manifest['requires']['recomp'] != primary['requires']['recomp']:
+                    raise ValueError('The mod folders target different recomp branches')
+                for asset in manifest['assets']:
+                    group = Path(asset['target']).parts[1]
+                    if groups is not None and group not in groups:
+                        continue
+                    key = (asset['bank_hash'], asset['record_index'], asset.get('texture_slot'),
+                           asset.get('component'))
+                    if key in seen:
+                        raise ValueError('Texture or component conflict: ' + asset['target'])
+                    seen.add(key)
+                    data = checked_file(folder, asset['file'], asset['sha256'])
+                    entry = stock_entries.get(asset['bank_hash'])
+                    if entry is None:
+                        raise ValueError('The installed catalog lacks ' + group)
+                    if asset.get('kind', 'dds.replace') in ('dds.replace', 'cloth.positions', 'court.scene') and asset['target'].startswith(entry['folder']+'/'):
+                        pristine = safe(project.source, asset['target'])
+                        if pristine.is_file() and sha(pristine.read_bytes()) == asset['source_sha256']:
+                            bank_name = Path(entry['folder']).name
+                            if bank_name not in project.state['banks']:
+                                project.add_bank(bank_name)
+                            safe(project.edit, asset['target']).write_bytes(data)
+                            editable_assets.append(asset['target'])
+                    attach(asset['file'], data)
+                    merged['assets'].append(dict(asset, kind=asset.get('kind', 'dds.replace')))
+                if manifest.get('roster') and (groups is None or 'Roster' in groups):
+                    if merged.get('roster'):
+                        raise ValueError('A combined project can contain only one roster')
+                    roster = manifest['roster']
+                    for field in ('file', 'header'):
+                        digest = roster['sha256' if field == 'file' else 'header_sha256']
+                        checked_file(folder, roster[field], digest)
+                    project.attach_roster(safe(folder, roster['file']), safe(folder, roster['header']))
+                    merged['roster'] = project.state['manifest']['roster']
+                for uniform in manifest.get('uniforms', []):
+                    name = uniform['name']
+                    group = name.removeprefix('sel')
+                    if groups is not None and group not in groups:
+                        continue
+                    if name in uniform_names:
+                        raise ValueError('Uniform bank conflict: ' + name)
+                    uniform_names.add(name)
+                    stage = project.edit/'assets'/name
+                    if stage.exists():
+                        raise ValueError('Loose asset conflicts with uniform bank ' + name)
+                    for file in uniform['files']:
+                        data = checked_file(folder, uniform['folder']+'/'+file['path'], file['sha256'])
+                        target = safe(stage, file['path'])
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(data)
+                    proof = project.contract.native('validate-uniform', project.source, stage,
+                                                    uniform['template_hash'], name, uniform['template_layout_sha256'])
+                    if proof.get('replacing'):
+                        catalog = read_json(project.edit/'assets.json', 32*1024*1024)
+                        catalog['entries'].append(stock_entries[proof['hash']])
+                        write_json(project.edit/'assets.json', catalog)
+                    merged.setdefault('uniforms', []).append(copy.deepcopy(uniform))
+                for extension in manifest.get('extensions', []):
+                    if groups is None or 'Code' in groups:
+                        path = extension['file']
+                        attach(path, checked_file(folder, path, extension['sha256']))
+                        merged.setdefault('extensions', []).append(copy.deepcopy(extension))
+            if not any(merged.get(key) for key in ('assets', 'roster', 'uniforms', 'extensions')):
+                raise ValueError('No mod content selected')
+            deps = {}
+            for manifest in manifests:
+                for dep in manifest['dependencies']:
+                    if dep['id'] in deps and deps[dep['id']] != dep:
+                        raise ValueError('Conflicting dependency versions: ' + dep['id'])
+                    deps[dep['id']] = dep
+            merged['dependencies'] = list(deps.values())
+            merged['incompatible'] = sorted({item for manifest in manifests for item in manifest['incompatible']})
+            merged['requires']['mod_api'] = max(m['requires']['mod_api'] for m in manifests)
+            project.state.update(manifest=merged, imported_assets=merged['assets'],
+                                 imported_editable_assets=editable_assets, imported_uniforms=sorted(uniform_names),
+                                 description=merged.get('description', ''))
+            project.save()
+            project.workspace()
+            os.rename(project.root, destination)
+        return cls(destination, runtime)
+
+    @staticmethod
+    def content_groups(manifest):
+        groups = {Path(item['target']).parts[1] for item in manifest['assets']}
+        groups.update(item['name'].removeprefix('sel') for item in manifest.get('uniforms', []))
+        if manifest.get('roster'):
+            groups.add('Roster')
+        if manifest.get('extensions'):
+            groups.add('Code')
+        return sorted(groups)
+
     def save(self):
         write_json(self.path,self.state,self.expected);self.expected=sha(self.path.read_bytes())
 
@@ -408,6 +565,8 @@ class ModProject:
             raise ValueError('Use the roster editor to change the neckline of an existing uniform')
         with tempfile.TemporaryDirectory(prefix='.uniform-', dir=self.root) as tmp:
             pair = uniforms.clone_pair(stock, template, asset, variant, Path(tmp), replace=replacing)
+            if any(bank.name in self.state.get('imported_uniforms', []) for bank in pair):
+                raise ValueError('Edit this imported uniform in the project texture browser')
             state = copy.deepcopy(self.state)
             changes = {}
             for bank, inputs in zip(pair, ((jersey, shorts), (selection or jersey,))):
@@ -543,7 +702,33 @@ class ModProject:
         """Materialize only changed, natively supported payloads into a fresh stage."""
         from jsonschema import Draft202012Validator
         changes=self.review();workspace=Workspace(self.edit/'assets');m=copy.deepcopy(self.state['manifest']);m['assets']=[]
-        added={r.entry['folder'] for r in workspace.resources if r.entry.get('added')}
+        imported_uniforms = set(self.state.get('imported_uniforms', []))
+        added={r.entry['folder'] for r in workspace.resources if r.entry.get('added')
+               and r.bank not in imported_uniforms}
+        editable = set(self.state.get('imported_editable_assets', []))
+        modified = {change['target'] for change in changes if change['sha256']}
+        imported = {item['target']: item for item in self.state.get('imported_assets', [])
+                    if item['target'] not in editable or item['target'] in modified}
+        for path, item in imported.items():
+            data = safe(self.package_root, item['file']).read_bytes()
+            if sha(data) != item['sha256']:
+                raise ValueError('Imported payload changed: ' + path)
+            target = safe(destination, item['file'])
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            m['assets'].append(copy.deepcopy(item))
+        for item in m.get('uniforms', []):
+            if item['name'] not in imported_uniforms:
+                continue
+            bank = safe(self.edit, 'assets/'+item['name'])
+            self.contract.native('validate-uniform', self.source, bank, item['template_hash'],
+                                 item['name'], item['template_layout_sha256'])
+            files = inventory(bank)
+            for path in files:
+                target = safe(destination, item['folder']+'/'+path)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(safe(bank, path), target)
+            item.update(files=[dict(path=p, sha256=h) for p,h in sorted(files.items())], _edited=True)
         # Existing uniform editor creates source-bound bank pairs. Validate and
         # package those exact inventories, linked by the edited native roster.
         for folder in sorted(added):
@@ -572,14 +757,20 @@ class ModProject:
                 continue
             paths=[r.component_path(i).relative_to(self.edit).as_posix() for i in range(2)]
             if not any(path in changed_paths for path in paths):continue
+            if r.bank in imported_uniforms:
+                continue
             original=[safe(self.source,path) for path in paths]
             edited=[safe(self.edit,path) for path in paths]
             self.contract.native('validate-court',*original,*edited)
             for index,(path,src,payload) in enumerate(zip(paths,original,edited)):
-                target=safe(destination,path)
+                existing = imported.get(path)
+                target=safe(destination,existing['file'] if existing else path)
                 target.parent.mkdir(parents=True,exist_ok=True)
                 data=payload.read_bytes()
                 target.write_bytes(data)
+                if existing:
+                    next(item for item in m['assets'] if item['target']==path)['sha256'] = sha(data)
+                    continue
                 m['assets'].append(dict(bank_hash=r.entry['hash'],record_index=r.record['index'],
                     record_id=r.record['id'],record_type=r.record['type'],kind='court.scene',
                     component=index,target=path,file=path,source_sha256=sha(src.read_bytes()),
@@ -595,7 +786,7 @@ class ModProject:
             slots[path]=slot
         for change in changes:
             path=change['target']
-            if path in court_paths or path=='native-roster-body.dat' or any(path.startswith(folder+'/') for folder in added):continue
+            if path in court_paths or path=='native-roster-body.dat' or Path(path).parts[1] in imported_uniforms or any(path.startswith(folder+'/') for folder in added):continue
             if path not in targets or not change['source_sha256'] or not change['sha256']: raise ValueError('Unsupported changed file (not silently omitted): '+path)
             r,kind=targets[path];data=safe(self.edit,path).read_bytes()
             if kind=='dds.replace':
@@ -607,7 +798,12 @@ class ModProject:
                                       data[76:108]!=safe(self.source,path).read_bytes()[76:108]):
                     raise ValueError('Named DDS must retain dimensions, channel masks and a single base level')
             else:self.contract.native('validate-cloth',safe(self.source,path),safe(self.edit,path))
-            target=safe(destination,path);target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+            imported_item = imported.get(path)
+            target=safe(destination, imported_item['file'] if imported_item else path)
+            target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(data)
+            if imported_item:
+                next(item for item in m['assets'] if item['target']==path)['sha256'] = sha(data)
+                continue
             a=dict(bank_hash=r.entry['hash'],record_index=r.record['index'],record_id=r.record['id'],record_type=r.record['type'],target=path,source_sha256=change['source_sha256'],file=path,sha256=sha(data),kind=kind)
             if kind=='cloth.positions':a['component']=0
             if path in slots:a['texture_slot']=slots[path]

@@ -1,7 +1,9 @@
 """Compact project area; existing editors operate on independent bank copies."""
 import json
+import tempfile
 from pathlib import Path
 
+from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QLineEdit,QPlainTextEdit,QFileDialog,QInputDialog,QComboBox,QDialog,QDialogButtonBox,QCheckBox
 
 from ..mod_project import ModProject,read_json
@@ -10,16 +12,19 @@ from .artwork_drop import ArtworkDrop
 
 class ModProjects(QWidget):
     def __init__(self, studio):
-        super().__init__();self.studio=studio;self.project=None
+        super().__init__();self.studio=studio;self.project=None;self.settings=QSettings("CHoops", "Recomp Studio")
         layout=QVBoxLayout(self)
         label=QLabel('Copy an existing bank into a project, drop artwork onto its texture preview, then export the mod folder. Installed assets are read-only.');label.setWordWrap(True);layout.addWidget(label)
         row=QHBoxLayout();layout.addLayout(row)
-        for title,fn in [('Create Mod…',self.create),('Open Project…',self.open),('Save metadata',self.save)]:
+        for title,fn in [('Create Mod…',self.create),('Open Project or Mod Folder…',self.open),('Combine with Mod Folder…',self.combine),('Separate Content…',self.separate),('Set Mods Folder…',self.choose_mods),('Save metadata',self.save)]:
             button=QPushButton(title);button.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(button)
         self.location=QLabel('No project open');self.location.setWordWrap(True);layout.addWidget(self.location)
         self.description=QLineEdit();self.description.setPlaceholderText('Mod description');layout.addWidget(self.description)
-        layout.addWidget(QLabel('Project manifest metadata: version, exact dependencies, compatibility, update_source. Generated content/assets are refreshed on export.'))
+        advanced = QCheckBox('Show advanced mod metadata')
+        layout.addWidget(advanced)
         self.metadata=QPlainTextEdit();self.metadata.setMaximumHeight(200);layout.addWidget(self.metadata)
+        self.metadata.hide()
+        advanced.toggled.connect(self.metadata.setVisible)
         row=QHBoxLayout();layout.addLayout(row);self.banks=QComboBox();row.addWidget(self.banks,1)
         for title,fn in [('Add source bank copy',self.add_bank),('Edit project copies',self.edit),('Compare selected texture',self.compare)]:
             b=QPushButton(title);b.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(b)
@@ -39,28 +44,128 @@ class ModProjects(QWidget):
         if self.project is None:raise ValueError('Create or open a mod project first')
         return self.project
 
-    def create(self):
-        if not self.studio.maybe_save():return
-        assets=QFileDialog.getExistingDirectory(self,'Read-only installed Xbox assets folder')
-        if not assets:return
-        runtime=QFileDialog.getExistingDirectory(self,'Runtime root containing tools/chmod.ps1 and docs/formats')
-        if not runtime:return
-        destination,_=QFileDialog.getSaveFileName(self,'New project directory (must not exist)')
-        if not destination:return
-        values=[]
-        for label in ('Mod ID (author.mod-name)','Mod name','Author'):
-            value,ok=QInputDialog.getText(self,'Create Mod',label)
-            if not ok:return
+    def choose_mods(self):
+        folder = QFileDialog.getExistingDirectory(self, 'Choose the recomp Mods folder', self.settings.value('mods', ''))
+        if folder:
+            self.settings.setValue('mods', folder)
+
+    def installation(self, assets=None):
+        if assets is None:
+            remembered = self.settings.value('assets', '')
+            assets = Path(remembered) if remembered else None
+        if not assets or not (Path(assets).parent/'assets.json').is_file():
+            assets = QFileDialog.getExistingDirectory(self, 'Installed Xbox assets folder')
+            if not assets:
+                return None
+        for candidate in (self.settings.value('runtime', ''), *Path(assets).parents):
+            if candidate and (Path(candidate)/'tools/chmod.ps1').is_file():
+                runtime = Path(candidate)
+                break
+        else:
+            runtime = QFileDialog.getExistingDirectory(self, 'Recomp runtime folder')
+            if not runtime:
+                return None
+        self.settings.setValue('assets', str(assets))
+        self.settings.setValue('runtime', str(runtime))
+        if not self.settings.value('mods', '') and (Path(runtime)/'mods').is_dir():
+            self.settings.setValue('mods', str(Path(runtime)/'mods'))
+        return assets, runtime
+
+    def new_location(self):
+        destination, _ = QFileDialog.getSaveFileName(self, 'New project directory')
+        return destination
+
+    def new_identity(self, default_name=''):
+        values = []
+        for label, default in (('Mod ID (author.mod-name)', ''), ('Mod name', default_name), ('Author', '')):
+            value, ok = QInputDialog.getText(self, 'New Mod', label, text=default)
+            if not ok:
+                return None
             values.append(value)
-        self.project=ModProject.create(destination,assets,runtime,*values);self.refresh();self.activate()
+        return values
+
+    def create(self):
+        if not self.studio.maybe_save():
+            return
+        installation = self.installation()
+        if not installation:
+            return
+        destination = self.new_location()
+        identity = self.new_identity() if destination else None
+        if identity:
+            self.studio.run_job(lambda _: ModProject.create(destination, *installation, *identity), self.opened)
 
     def open(self):
-        if not self.studio.maybe_save():return
-        path=QFileDialog.getExistingDirectory(self,'Open mod project directory')
-        if not path:return
-        runtime=QFileDialog.getExistingDirectory(self,'Select a trusted local runtime installation')
-        if not runtime:return
-        self.project=ModProject(path,runtime);self.refresh();self.activate()
+        if not self.studio.maybe_save():
+            return
+        path = QFileDialog.getExistingDirectory(self, 'Open project or installed mod folder', self.settings.value('mods', ''))
+        if not path:
+            return
+        folder = Path(path)
+        if (folder/'project.json').is_file():
+            installation = self.installation(Path(read_json(folder/'project.json')['source'])/'assets')
+            if installation:
+                self.opened(ModProject(folder, installation[1]))
+        elif (folder/'mod.json').is_file():
+            installation = self.installation()
+            destination = self.new_location() if installation else None
+            if destination:
+                self.studio.run_job(lambda _: ModProject.import_folders(destination, *installation, [folder]), self.opened)
+        else:
+            raise ValueError('Select a folder containing project.json or mod.json')
+
+    def opened(self, project):
+        self.project = project
+        self.refresh()
+        self.activate()
+
+    def combine(self):
+        project = self.require()
+        if not self.studio.maybe_save():
+            return
+        folder = QFileDialog.getExistingDirectory(self, 'Select another mod folder containing mod.json', self.settings.value('mods', ''))
+        if folder:
+            self.compose(project, extra=Path(folder))
+
+    def separate(self):
+        project = self.require()
+        if self.studio.maybe_save():
+            self.compose(project, split=True)
+
+    def compose(self, project, *, extra=None, split=False):
+        self.save()
+        destination = self.new_location()
+        identity = self.new_identity(project.state['manifest']['name']) if destination else None
+        if not identity:
+            return
+        if split:
+            # Review the generated manifest so newly authored banks are included.
+            self.studio.run_job(lambda _: self.split_groups(project), lambda groups:
+                                self.select_group(project, destination, identity, groups))
+        else:
+            self.compose_job(project, destination, identity, extra=extra)
+
+    @staticmethod
+    def split_groups(project):
+        with tempfile.TemporaryDirectory(dir=project.root, prefix='.catalog-') as temp:
+            return project.content_groups(project.build(Path(temp)))
+
+    def select_group(self, project, destination, identity, groups):
+        if not groups:
+            return
+        group, ok = QInputDialog.getItem(self, 'Separate content', 'Bank or content to put in the new project', groups, editable=False)
+        if ok:
+            self.compose_job(project, destination, identity, groups={group})
+
+    def compose_job(self, project, destination, identity, *, extra=None, groups=None):
+        def process(_):
+            with tempfile.TemporaryDirectory(dir=project.root, prefix='.compose-') as temp:
+                stage = Path(temp)
+                project.build(stage)
+                folders = [stage] + ([extra] if extra else [])
+                return ModProject.import_folders(destination, project.source/'assets', project.contract.root,
+                                                 folders, identity=identity, groups=groups)
+        self.studio.run_job(process, self.opened)
 
     def activate(self):
         self.studio.cancel_index();self.studio.workspace_generation+=1
@@ -322,9 +427,13 @@ class ModProjects(QWidget):
         p=self.require()
         if not self.studio.maybe_save():return
         self.save()
-        parent=QFileDialog.getExistingDirectory(self,'Choose where to create the mod folder')
-        if not parent:return
-        output=str(Path(parent)/p.state['manifest']['id'])
+        manifest = p.state['manifest']
+        default = Path(self.settings.value('mods', '') or p.root.parent)/manifest['id']
+        if default.exists():
+            default = default.with_name(default.name+'-'+manifest['version'])
+        output, _ = QFileDialog.getSaveFileName(self, 'Export new mod folder', str(default))
+        if not output:
+            return
         dependencies=[]
         if p.state['manifest'].get('dependencies'):
             paths,ok=QInputDialog.getMultiLineText(self,'Validation dependencies','Installed dependency version directories, one per line')

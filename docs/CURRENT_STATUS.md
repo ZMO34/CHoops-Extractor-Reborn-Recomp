@@ -185,3 +185,7 @@ Alternate projects derive template-sized BC5 normals and BC4 jersey and shorts m
 ## 0.2.2 stock uniform replacement
 
 Studio authors existing UH, UA, and routed alternate banks alongside new X/Y/Z pairs. Stock uniform replacements preserve the original world and selection bank identities in the runtime overlay and receive private BC texture identities.
+
+## 0.2.3 mod projects
+
+Studio remembers the installation and default Mods folder. Installed mod folders import into independent working projects, including named DDS and registered XYZ assets. Projects can be combined and separated by bank or content group.

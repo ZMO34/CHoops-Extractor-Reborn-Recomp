@@ -188,3 +188,7 @@ All 452 retail Home world banks inspected contain case-sensitive TXTR IDs `unifb
 ## Stock uniform overrides
 
 A replacement targets the same case-sensitive canonical filename and stock bank hash as its template. The validator checks the original layout and preserves the roster route, while rekeying compressed textures with visually equivalent BC blocks to isolate shared stock pixel identities. The cooked layout retains its stock catalog entry.
+
+## Mod project folder identities
+
+Studio identifies named texture slots from the catalog and checks the source digest before exposing an imported asset for editing. Registered uniform folders use their native bank names and validated template metadata. The editor pairs a selection uniform bank with its world bank during separation.

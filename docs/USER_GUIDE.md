@@ -192,3 +192,26 @@ With active mods, the launcher clears unlock codes and makes installed alternate
 In **Mods / Mod Projects**, choose **Build or replace uniform**, then select a team and **Home (UH)**, **Away (UA)**, or an alternate. A routed stock uniform is replaced in the mod overlay, including its selection bank. A vacant X/Y/Z slot is built from Home. Drop the artwork you want to change. A replacement can edit just one garment or sheet, while a new alternate needs world jersey and shorts artwork. Automatic BC5 bumps and BC4 material maps are enabled for each supplied garment. Use the roster editor for stock neckline changes.
 
 Export the mod folder and install it in the launcher with the matching 0.2.2 native tools. When multiple teams share the same bank or roster route, use an independently routed bank for a team-specific replacement.
+
+## Where texture mods are installed
+
+The recomp launcher reads texture replacements from installed mod packages
+under `mods/`. For a loose texture override, the `assets/` path in the
+package mirrors the vanilla bank and record path. The launcher reads the
+replacement bytes from the package and creates a separate runtime cache.
+Vanilla files are the read-only source. Disable the mod to load vanilla textures.
+
+This applies to supported standalone and embedded texture slots in courts,
+arenas, menus, uniforms, shoes, and other banks. For an existing texture,
+copy the owning bank into a Studio project, replace the selected artwork, and
+export a mod folder. The exported package includes the selected overrides.
+Packed or unrecognized layouts still need a verified codec and an exportable
+slot before Studio can produce a replacement.
+
+## Open, combine, and separate mod folders
+
+Studio remembers the installed assets path and the Mods folder. Use **Set Mods Folder** to change the default location for package pickers and exports.
+
+Choose **Open Project or Mod Folder** to open an author project or bring an existing `mod.json` package into a new working folder. Named texture paths and registered XYZ world and selection banks are available in the project browser. Other package payloads can be carried through export according to their existing manifest contract.
+
+**Combine with Mod Folder** makes a new project containing the current project and another package. An overlap on the same resource requires a choice of input. **Separate Content** makes a new project containing the selected bank, uniform pair, roster, or code group. Give combined and separated projects a new mod ID. Export a new folder for launcher import.

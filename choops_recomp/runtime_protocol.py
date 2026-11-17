@@ -66,7 +66,7 @@ def augment_manifest(root,manifest):
         if folder.parent!=(Path(root)/'assets').resolve():raise ValueError('New uniform folder escapes assets')
         layout=json.loads((folder/'asset.json').read_text())
         if not layout.get('blocks'):raise ValueError('New uniform banks require standard Xbox IFF components')
-        entry=dict(template,index=max(e['index'] for e in result['entries'])+1,hash=identity,folder=spec['folder'],offset=end,added=True,template_hash=template['hash'])
+        entry=dict(template,index=max((e['index'] for e in result['entries']), default=0)+1,hash=identity,folder=spec['folder'],offset=end,added=True,template_hash=template['hash'])
         result['entries'].append(entry);end+=(template['size']+2047)&~2047;occupied.add(identity)
     if manifest.get('storage')=='loose-resources':
         assets=(Path(root)/'assets').resolve();folders={e['folder'] for e in result['entries']}
@@ -81,7 +81,7 @@ def augment_manifest(root,manifest):
             if identity!=spec['hash'] or identity in occupied:raise ValueError('Duplicate or incorrect loose asset CRC identity')
             size=int(spec['source_size']);flags=int(spec['toc_flags'])
             if not layout.get('blocks') or not layout['length']<=size<=512*1024*1024 or not 0<=flags<=0xffffffff:raise ValueError('Invalid loose asset metadata')
-            entry=dict(index=max(e['index'] for e in result['entries'])+1,hash=identity,folder=relative,offset=end,size=size,added=True,toc_flags=flags,sha256=spec.get('source_sha256',''))
+            entry=dict(index=max((e['index'] for e in result['entries']), default=0)+1,hash=identity,folder=relative,offset=end,size=size,added=True,toc_flags=flags,sha256=spec.get('source_sha256',''))
             if 'template_hash' in spec:entry['template_hash']=spec['template_hash']
             result['entries'].append(entry);end+=(size+2047)&~2047;occupied.add(identity);folders.add(relative)
     return result

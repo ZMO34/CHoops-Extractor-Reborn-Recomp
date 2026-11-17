@@ -129,3 +129,7 @@ The alternate command accepts optional `--numbers WORLD.png`, `--selection-numbe
 ### Stock uniform replacements
 
 `choops-recomp mod uniform PROJECT TEAM_INDEX H JERSEY SHORTS --runtime RECOMP` replaces Home. Use `A` for Away or `X`, `Y`, or `Z` for an existing or vacant alternate. The command accepts the same optional artwork and map flags as `mod alternate`.
+
+## Studio startup defaults
+
+The desktop executable accepts `--default-assets PATH` and `--mods PATH` for initial folder defaults. Studio remembers paths selected in the UI. The existing `--assets PATH` option opens a specific installation for that run.

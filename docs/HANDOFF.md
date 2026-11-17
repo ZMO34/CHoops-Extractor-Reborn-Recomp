@@ -193,6 +193,10 @@ Alternate projects derive template-sized BC5 normals and BC4 jersey and shorts m
 
 Studio authors existing UH, UA, and routed alternate banks alongside new X/Y/Z pairs. Stock uniform replacements preserve the original world and selection bank identities in the runtime overlay and receive private BC texture identities.
 
+## 0.2.3 mod projects
+
+Studio remembers the installation and default Mods folder. Installed mod folders import into independent working projects, including named DDS and registered XYZ assets. Projects can be combined and separated by bank or content group.
+
 
 ---
 
@@ -337,6 +341,10 @@ Studio supports optional indexed number and surname replacements for new alterna
 ## 0.2.2 stock uniform authoring
 
 The builder generates the same verified bump and material maps for replacements and new pairs. Replacement support covers uniquely routed stock world/selection banks; shared artwork routing and live gameplay remain outside the verified workflow.
+
+## 0.2.3 mod folder round trips
+
+Mod folders preserve registered uniform pairs, named texture identities, conditional texture metadata, and supplied payloads. Combined projects require disjoint content. A separated project keeps the selected group intact. Some payloads are carried through export without an editor.
 
 
 ---
@@ -543,3 +551,17 @@ bank IDs, wrote independent native DDS bindings, and preserved the installed
 source files. World replacements generated BC5 jersey and shorts normals and
 BC4 material maps. Selection generated the BC5 jersey normal. Gameplay
 appearance remains unverified.
+
+## Texture mod folder verification
+
+The named non-uniform texture test checks that the resolver selects the
+installed mod file, that its bytes reach the separate runtime cache, and
+that the vanilla DDS remains byte-identical. Five native texture tests also
+passed for named, embedded, and indexed DDS handling.
+
+## 0.2.3 mod project checks
+
+The 164-test Windows suite passed. Offline checks imported, combined, and
+separated the installed Georgia floor, shorter shorts, and button art packages.
+The Albany X world and selection banks were opened in the project browser and
+exported through the runtime resolver. In-game appearance remains unverified.

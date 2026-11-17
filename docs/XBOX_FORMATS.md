@@ -180,3 +180,7 @@ Named DDS overrides bind the existing Xbox bank, record, slot, and source digest
 ## 0.2.0 authored artwork
 
 Existing textures retain catalog identities and source hashes. Full courts bind both floor SCNE components and fit the UGA artwork coordinates using the native tool. New alternate banks preserve the template layout and use verified private BC texture identities. The package inventories both uniform banks and leaves roster automatic linking to the launcher.
+
+## Uniform bumps and indexed atlases
+
+All 452 retail Home world banks inspected contain case-sensitive TXTR IDs `unifbump` (0x20d15abf), `shortbump` (0x582c779c), `jersey_numbers` (0x3e0620f6), and `names` (0xf2334940). The 452 selection banks contain `unifbump` and `jersey_numbers`. Generated bumps use the verified BC5 descriptors. The world `unif` and `short` records hold single-channel BC4 material masks in the inspected banks. Studio preserves the stock material layout and modulates it with local artwork detail. The selection `unif` record can instead hold BC1 color. The native roster validator supports aggregate title fields at offsets 316 and 320 and clears the corresponding owner field in exported headers. For cloned atlases, the validator permits changes inside the indexed mip data and ARGB palette and checks the source descriptor, alignment padding, and all other component bytes.

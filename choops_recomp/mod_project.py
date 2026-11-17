@@ -228,7 +228,12 @@ class ModProject:
     def attach_roster(self, payload, header):
         # Validate staged bytes before replacing an earlier project attachment.
         if Path(payload).stat().st_size>64*1024*1024 or Path(header).stat().st_size!=328:raise ValueError('Native roster/header exceeds supported bounds')
-        data=Path(payload).read_bytes();head=Path(header).read_bytes()
+        data = Path(payload).read_bytes()
+        source_header = Path(header).read_bytes()
+        # The verified aggregate owner field is the only profile-specific field
+        # we clear. The native validator checks the remaining save contract.
+        owner_offset = 312 if source_header[320:324] == bytes.fromhex('54540818') else 308
+        head = source_header[:owner_offset] + bytes(8) + source_header[owner_offset + 8:]
         with tempfile.TemporaryDirectory(prefix='.roster-',dir=self.root) as temp:
             staged=Path(temp)/'Roster.ROS';staged.write_bytes(data);h=Path(temp)/'Roster.ROS.header';h.write_bytes(head)
             self.contract.native('validate-roster',staged,h)
@@ -238,6 +243,33 @@ class ModProject:
         changes={safe(self.package_root,'rosters/Roster.ROS'):data,safe(self.package_root,'rosters/Roster.ROS.header'):head,safe(self.edit,'native-roster-body.dat'):body}
         state=copy.deepcopy(self.state);state['manifest']['roster']=dict(file='rosters/Roster.ROS',sha256=sha(data),header='rosters/Roster.ROS.header',header_sha256=sha(head));state['native_body_sha256']=sha(body)
         self._commit_attachment(changes,state)
+
+    def export_roster_save(self, output):
+        """Publish the validated ROS/header pair into one fresh directory."""
+        output = Path(output).resolve()
+        if output.exists() or output.is_relative_to(self.root) or output.is_relative_to(self.source):
+            raise ValueError('Choose a new roster export folder outside the project and source')
+        roster = self.state['manifest'].get('roster')
+        if not roster:
+            raise ValueError('Attach a native roster and its original header first')
+        from .roster import Roster
+
+        body = safe(self.edit, 'native-roster-body.dat').read_bytes()
+        Roster(body)
+        header = safe(self.package_root, roster['header']).read_bytes()
+        if sha(header) != roster['header_sha256']:
+            raise ValueError('The attached roster header changed')
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix='.roster-export-', dir=output.parent) as temp:
+            stage = Path(temp) / 'roster'
+            stage.mkdir()
+            save_file = stage / 'Roster.ROS'
+            header_file = stage / 'Roster.ROS.header'
+            save_file.write_bytes(struct.pack('>I', len(body)) + body)
+            header_file.write_bytes(header)
+            self.contract.native('validate-roster', save_file, header_file)
+            os.rename(stage, output)
+        return output
 
     def attach_extension(self, payload, hook='player.weight.read', abi=1, capabilities=None, replacements=None):
         registry=read_json(DATA/'chmod_hooks.json')
@@ -322,15 +354,18 @@ class ModProject:
             self._commit_attachment(changes, state)
         return court
 
-    def create_alternate(self, team, variant, jersey, shorts, selection=None):
+    def create_alternate(self, team, variant, jersey, shorts, selection=None, *,
+                         numbers=None, selection_numbers=None, lettering=None, logo=None, generate_bumps=True, neck_shape=None):
         """Create and validate a world/selection pair from the team's Home art."""
-        from . import dds, uniforms
+        from . import dds, uniform_fonts, uniforms
         from .edits import artwork_payload
         from .roster import Roster
         import zlib
 
         if variant not in (2, 3, 4):
             raise ValueError('Choose X, Y or Z')
+        if neck_shape is not None and (type(neck_shape) is not int or not 0 <= neck_shape < 5):
+            raise ValueError('Choose a supported Xbox neckline')
         self.check_source()
         stock = Workspace(self.source / 'assets')
         roster, = (resource for resource in stock.of_type('ROST') if resource.bank == 'roster_english.iff')
@@ -358,7 +393,11 @@ class ModProject:
                 layout = read_json(bank / 'asset.json')
                 identity = layout['identity']
                 bound = {texture['record']: texture for texture in layout['textures']}
-                for names, artwork in zip((('unifregion', 'unif'), ('shortregion', 'short')), inputs):
+                is_selection = bank.name.startswith('sel')
+                for names, bump, artwork in zip(
+                    (('unifregion', 'unif'), ('shortregion', 'short')),
+                    ('unifbump', 'shortbump'), inputs,
+                ):
                     for name in names:
                         matches = [r for r in layout['records']
                                    if r['id'] == zlib.crc32(name.encode()) and r['index'] in bound]
@@ -372,7 +411,62 @@ class ModProject:
                         raise ValueError(f'Missing {name} artwork in {bank.name}')
                     target = bank / bound[matches[0]['index']]['path']
                     before = target.read_bytes()
-                    dds.replace(target, artwork_payload(artwork, before), before)
+                    payload = artwork_payload(artwork, before)
+                    dds.replace(target, payload, before)
+                    if generate_bumps:
+                        bump_slots = [bound[r['index']] for r in layout['records']
+                                      if r['id'] == zlib.crc32(bump.encode()) and r['index'] in bound]
+                        if len(bump_slots) != 1:
+                            raise ValueError(f'Missing or ambiguous {bump} in {bank.name}')
+                        normal = bank / bump_slots[0]['path']
+                        baseline = normal.read_bytes()
+                        from PIL import Image
+
+                        if Path(artwork).suffix.casefold() == '.dds':
+                            color = dds.image(payload)
+                        else:
+                            with Image.open(artwork) as opened:
+                                color = opened.convert('RGBA')
+                        dds.replace(normal, dds.normal_from_artwork(color, baseline), baseline)
+                        material_name = names[-1]
+                        material_slots = [bound[r['index']] for r in layout['records']
+                                          if r['id'] == zlib.crc32(material_name.encode())
+                                          and r['index'] in bound and r['index'] != matches[0]['index']]
+                        if len(material_slots) > 1:
+                            raise ValueError(f'Ambiguous {material_name} in {bank.name}')
+                        if material_slots:
+                            material = bank / material_slots[0]['path']
+                            template = material.read_bytes()
+                            if dds.info(template)['fourcc'] == 'ATI1':
+                                result = dds.material_from_artwork(color, template)
+                            elif is_selection:
+                                result = artwork_payload(artwork, template)
+                            else:
+                                raise ValueError(f'Unsupported {material_name} material format in {bank.name}')
+                            dds.replace(material, result, template)
+                if logo is not None and not is_selection:
+                    slots = [bound[r['index']] for r in layout['records']
+                             if r['id'] == zlib.crc32(b'logo') and r['index'] in bound]
+                    if len(slots) != 1:
+                        raise ValueError(f'Missing or ambiguous logo in {bank.name}')
+                    target = bank / slots[0]['path']
+                    baseline = target.read_bytes()
+                    dds.replace(target, artwork_payload(logo, baseline), baseline)
+                sheets = (('jersey_numbers', selection_numbers),) if is_selection else (
+                    ('jersey_numbers', numbers), ('names', lettering))
+                for label, artwork in sheets:
+                    if artwork is None:
+                        continue
+                    records = [r for r in layout['records'] if
+                               r['id'] == zlib.crc32(label.encode()) and r['type'] == 0x5c369069]
+                    if len(records) != 1:
+                        raise ValueError(f'Missing or ambiguous {label} in {bank.name}')
+                    paths = [bank / c['path']
+                             for block, offset in zip(layout['blocks'], records[0]['offsets'])
+                             for c in block['components'] if c['start'] == offset]
+                    cpu, gpu = paths
+                    blocks = [cpu.read_bytes(), gpu.read_bytes()]
+                    gpu.write_bytes(uniform_fonts.edited_pixels(blocks, artwork))
                 name = bank.name
                 relative = 'uniforms/' + name
                 template_hash = identity['template_hash']
@@ -397,9 +491,11 @@ class ModProject:
                         {file['path'] for file in previous['files']} != set(files)):
                         raise ValueError('The existing project uniform uses a different template or inventory')
                     entries.remove(previous)
-                entries.append(dict(
-                    name=name, template_hash=template_hash, template_layout_sha256=digest,
-                    folder=relative, files=[dict(path=p, sha256=h) for p,h in sorted(files.items())]))
+                entry = dict(name=name, template_hash=template_hash, template_layout_sha256=digest,
+                             folder=relative, files=[dict(path=p, sha256=h) for p,h in sorted(files.items())])
+                if neck_shape is not None and not is_selection:
+                    entry['neck_shape'] = neck_shape
+                entries.append(entry)
                 for file in files:
                     changes[safe(self.package_root, relative + '/' + file)] = safe(bank, file).read_bytes()
             self._commit_attachment(changes, state)
@@ -508,7 +604,25 @@ class ModProject:
         write_json(destination/'mod.json',m)
         return m
 
-    def export_folder(self, output, dependencies=None):
+    def build_roster_mod(self, stage):
+        from jsonschema import Draft202012Validator
+
+        manifest = copy.deepcopy(self.state['manifest'])
+        roster = manifest.get('roster')
+        if roster is None:
+            raise ValueError('Attach a native roster and its original header first')
+        output = self.export_roster_save(stage / 'rosters')
+        roster['sha256'] = sha((output / 'Roster.ROS').read_bytes())
+        for key in ('uniforms', 'extensions'):
+            manifest.pop(key, None)
+        manifest.update(assets=[], content=['rosters'], capabilities=['roster.expose'])
+        if self.state.get('description'):
+            manifest['description'] = self.state['description']
+        Draft202012Validator(read_json(DATA/'chmod.schema.json')).validate(manifest)
+        write_json(stage/'mod.json', manifest)
+        return manifest
+
+    def export_folder(self, output, dependencies=None, *, roster_only=False):
         output=Path(output).resolve()
         if output.exists():raise ValueError('Choose a new mod folder')
         if output.is_relative_to(self.source) or output.is_relative_to(self.root):
@@ -517,7 +631,7 @@ class ModProject:
         with tempfile.TemporaryDirectory(prefix='.mod-folder-',dir=output.parent) as temp:
             stage=Path(temp)/'mod'
             stage.mkdir()
-            manifest=self.build(stage)
+            manifest=self.build_roster_mod(stage) if roster_only else self.build(stage)
             self.contract.package(stage,self.source,dependencies)
             self.check_source()
             if output.exists():raise ValueError('Destination appeared during export')

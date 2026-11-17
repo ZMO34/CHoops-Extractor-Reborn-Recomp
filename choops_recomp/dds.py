@@ -53,6 +53,11 @@ def from_image(source,baseline,mipmaps=True):
         from .raw_texture import from_image as raw_from_image
         return raw_from_image(source,baseline)
     with Image.open(source) as opened:art=opened.convert('RGBA')
+    return encode_image(art, baseline, mipmaps)
+
+
+def encode_image(art, baseline, mipmaps=True):
+    old = info(baseline)
     if old.get('direct_component'):
         if art.size!=(old['width'],old['height']):raise ValueError('Packed-base texture artwork must retain native dimensions')
         header=bytearray(baseline[:128]);struct.pack_into('<I',header,28,1);return bytes(header)+_encode_level(art,old['fourcc'].encode())
@@ -65,6 +70,49 @@ def from_image(source,baseline,mipmaps=True):
         level=level.resize((max(1,level.width//2),max(1,level.height//2)),Image.Resampling.LANCZOS)
     header=bytearray(baseline[:128]);struct.pack_into('<I',header,8,0x81007|(0x20000 if len(levels)>1 else 0));struct.pack_into('<5I',header,12,height,width,len(levels[0]),0,len(levels));struct.pack_into('<I',header,108,0x1000|(0x400008 if len(levels)>1 else 0))
     result=bytes(header)+b''.join(levels);info(result);return result
+
+
+def normal_from_artwork(source, baseline):
+    """Derive a shallow tangent-space normal from artwork luminance."""
+    from math import sqrt
+    from PIL import ImageFilter
+
+    template = info(baseline)
+    if template['fourcc'] != 'ATI2':
+        raise ValueError('Uniform bump template must be BC5')
+    width, height = template['width'], template['height']
+    source = source.convert('RGBA').resize((width, height), Image.Resampling.LANCZOS)
+    luminance = source.convert('L').filter(ImageFilter.GaussianBlur(1)).tobytes()
+    alpha = source.getchannel('A').tobytes()
+    rgb = bytearray(width * height * 3)
+    for y in range(height):
+        for x in range(width):
+            i = y * width + x
+            left, right = y * width + max(x - 1, 0), y * width + min(x + 1, width - 1)
+            top, bottom = max(y - 1, 0) * width + x, min(y + 1, height - 1) * width + x
+            dx = (luminance[left] - luminance[right]) * min(alpha[left], alpha[right]) / 65025
+            dy = (luminance[top] - luminance[bottom]) * min(alpha[top], alpha[bottom]) / 65025
+            scale = 127.5 / sqrt(1 + dx * dx + dy * dy)
+            rgb[i * 3:i * 3 + 3] = bytes((round(127.5 + dx * scale),
+                                            round(127.5 + dy * scale), round(127.5 + scale)))
+    return encode_image(Image.frombytes('RGB', (width, height), bytes(rgb)), baseline)
+
+
+def material_from_artwork(source, baseline):
+    """Add artwork detail to the stock single-channel cloth material layout."""
+    from PIL import ImageChops, ImageFilter
+
+    template = info(baseline)
+    if template['fourcc'] != 'ATI1':
+        raise ValueError('Uniform material template must be BC4')
+    stock = image(baseline).convert('L')
+    source = source.convert('RGBA').resize(stock.size, Image.Resampling.LANCZOS)
+    luminance = source.convert('L')
+    local = luminance.filter(ImageFilter.GaussianBlur(2))
+    detail = ImageChops.subtract(luminance, local, scale=2, offset=128)
+    detailed = ImageChops.add(stock, detail, offset=-128)
+    blended = Image.composite(detailed, stock, source.getchannel('A'))
+    return encode_image(blended, baseline)
 
 
 def replace(path,payload,baseline=None):

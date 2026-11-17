@@ -118,3 +118,10 @@ The shared authoring backend exposes ModProject.export_folder(destination). It v
 - `choops-recomp mod export PROJECT NEW_FOLDER --runtime RECOMP`
 
 Resource-writing commands require the project's edit/assets workspace. Project export uses runtime validation. Use the desktop asset browser or the CLI info and roster-link commands to find identities in the original installation.
+
+### Alternate bump maps and sheets in 0.2.1
+
+The alternate command accepts optional `--numbers WORLD.png`, `--selection-numbers SELECTION.png`, and `--lettering SURNAMES.png` inputs. Automatic BC5 bump and BC4 material map generation is enabled by default. Pass `--keep-template-bumps` to retain the Home maps. Use `--logo LOGO.png` for world logo art and `--neck-shape 0..4` to save a neckline override.
+
+- `choops-recomp mod roster-save PROJECT NEW_FOLDER --runtime RECOMP` exports the save and aggregate header.
+- `choops-recomp mod export PROJECT NEW_FOLDER --roster-only --runtime RECOMP` exports a folder containing only the attached roster.

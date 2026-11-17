@@ -13,7 +13,7 @@ def unique(workspace,filename,kind,record_name):
     if len(matches)!=1:raise ValueError('Xbox asset identity missing or ambiguous: '+filename+'/'+record_name)
     return matches[0]
 
-def preview(workspace,row,shape=None,build='reg',shorts='reg',number=None,surname=''):
+def preview(workspace,row,shape=None,build='reg',shorts='reg',number=None,surname='',artwork=None):
     if shape is None:shape=row['shape']
     if not 0<=shape<5 or build not in ('thin','reg','fat') or shorts not in ('thin','reg','fat'):raise ValueError('Unsupported Xbox cloth shape')
     filename=uniforms.name(row['asset'],row['variant']);result=dict(meshes=[],images={},textures=[],warnings=[],declared_parts=0,resource=None)
@@ -25,6 +25,9 @@ def preview(workspace,row,shape=None,build='reg',shorts='reg',number=None,surnam
             if matches:art=matches[0];break
         if art is None:raise ValueError('Missing Xbox '+role+' artwork')
         edited=art.folder/'texture.dds';blocks=art.blocks();payload=edited.read_bytes() if edited.is_file() else dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None)
+        if artwork and artwork.get(role):
+            from .edits import artwork_payload
+            payload = artwork_payload(artwork[role], payload, mipmaps=False)
         image=dds.image(payload);image.putalpha(255);result['images'][texture_index]=image
         decoded=scene.preview(garment.blocks());result['declared_parts']+=decoded['declared_parts'];result['warnings'].extend(decoded['warnings'])
         for mesh in decoded['meshes']:

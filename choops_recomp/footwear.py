@@ -29,7 +29,17 @@ def set_value(model,index,field,value):
         for key in KEYS[1:]:
             if str(player[key]) not in choices(key,player):player[key]=0
     elif str(value) not in choices(field,player):raise ValueError('Choose a style/color available for this shoe manufacturer')
-    texture(player);texture(player,True);data=bytearray(model.data);base=model.row('players',index)['offset']
+    save_assignment(model, index, {key: player[key] for key in KEYS})
+
+
+def save_assignment(model, index, assignment):
+    if set(assignment) != set(KEYS) or any(type(value) is not int for value in assignment.values()):
+        raise ValueError('Invalid Xbox footwear assignment')
+    texture(assignment)
+    texture(assignment, True)
+    data = bytearray(model.data)
+    base = model.row('players', index)['offset']
+    player = assignment
     for key in KEYS:
         spec=FIELDS[key];off=base+spec['offset'];word=int.from_bytes(data[off:off+4],'big');mask=((1<<spec['bits'])-1)<<spec['shift'];data[off:off+4]=((word&~mask)|(player[key]<<spec['shift'])).to_bytes(4,'big')
     model._commit(data)

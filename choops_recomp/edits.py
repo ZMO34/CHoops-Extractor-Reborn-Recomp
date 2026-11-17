@@ -30,8 +30,10 @@ def register(resource,source,path,kind):
 
 
 def named_texture_path(resource,slot=0):
-    return getattr(resource.workspace,'texture_catalog',{}).get(
-        (resource.entry['hash'],resource.record['index'],slot))
+    catalog = getattr(getattr(resource, 'workspace', None), 'texture_catalog', None)
+    if catalog:
+        return catalog.get((resource.entry['hash'], resource.record['index'], slot))
+    return None
 
 
 def save_named_texture(path,payload):

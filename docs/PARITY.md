@@ -131,3 +131,7 @@ Mod authoring supports folder export for named DDS files. Original encodings and
 | Roster editing | Attached native save body with its aggregate header |
 | 3D previews | Original or project SCNE browser |
 | Code mods | External compiled SDK extension attachment |
+
+## 0.2.1 uniform artwork
+
+Studio supports optional indexed number and surname replacements for new alternate banks and named-sheet replacements on existing banks. Glyph placement and spacing are inherited for exported artwork. The alternate builder supports five authored neck shapes. The native save exposes one player shoe brand and style and two color fields. Per-alternate footwear and in-game visual parity remain pending.

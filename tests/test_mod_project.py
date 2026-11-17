@@ -224,13 +224,18 @@ def test_native_roster_edit_rewrapped_and_revalidated(author,tmp_path):
     p,_,_=author
     from test_chmod_contracts import synthetic_roster
     from choops_recomp.roster import Roster
-    data,header,_=synthetic_roster();save=tmp_path/'Roster.ROS';head=tmp_path/'Roster.ROS.header';save.write_bytes(data);head.write_bytes(header);p.attach_roster(save,head)
+    data,header,_=synthetic_roster();save=tmp_path/'Roster.ROS';head=tmp_path/'Roster.ROS.header'
+    original_header = bytes(header[:308]) + bytes.fromhex('b13ebabebabebabe') + bytes(header[316:])
+    save.write_bytes(data);head.write_bytes(original_header);p.attach_roster(save,head)
     resource=p.workspace().of_type('ROST')[0];model=Roster(resource.blocks()[0]);model.set_player(0,'jersey_number',42);model.save(resource.component_path())
     stage=tmp_path/'stage';stage.mkdir();manifest=p.build(stage)
     exported=(stage/manifest['roster']['file']).read_bytes()
     assert struct.unpack_from('>I',exported)[0]==len(exported)-4
     assert Roster(exported[4:]).rows['players'][0]['jersey_number']==42
-    assert save.read_bytes()==data and head.read_bytes()==header
+    standalone = p.export_roster_save(tmp_path / 'standalone')
+    assert (standalone / 'Roster.ROS').read_bytes() == exported
+    assert (standalone / 'Roster.ROS.header').read_bytes() == header
+    assert save.read_bytes()==data and head.read_bytes()==original_header
     # Missing uniform routes reject combined activation rather than exporting
     # unrelated jersey filenames as if they were linked.
     with pytest.raises(ValueError,match='unregistered uniform'):p.export(tmp_path/'missing-uniforms.chmod')

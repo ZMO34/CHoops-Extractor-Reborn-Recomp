@@ -177,3 +177,7 @@ Studio exports mod folders with mod.json and mirrored named DDS assets. The runt
 ## 0.2.0 folder-first authoring
 
 Studio stages existing texture edits, one-image court component pairs and eligible X/Y/Z world/selection additions in private projects. Source browsing stays read-only. Full courts depend on the selected runtime's native court builder and stock layout coverage. Executable code authoring remains an external SDK workflow.
+
+## 0.2.1 uniform authoring
+
+Alternate projects derive template-sized BC5 normals and BC4 jersey and shorts material maps by default, show dropped artwork in 3D, offer a neckline override, and can replace world numbers, selection numbers, and surname artwork. Existing uniform sheets use named DDS replacement in mod-folder export. Alternate sheets require an updated native validator. Roster export supports mod folders and native save/header pairs. Player shoe selection uses the verified Home/Away fields.

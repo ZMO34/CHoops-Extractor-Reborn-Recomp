@@ -174,3 +174,15 @@ In Mod Projects choose Export mod folder and select a parent directory. Studio c
 5. Choose **Export Mod Folder**. Import the generated folder in the recomp launcher and enable its exact version.
 
 3D previews and roster editing still use the existing workspace tools. To edit a roster, attach a compatible native Roster.ROS and its aggregate header in the project. Original installed assets are read-only. Audio preview and export remain available; raw audio and indexed-font edits have no mod folder contract. Compile custom code with the SDK outside Studio. Attach a compiled supported DLL for packaging, or use the mod CLI to declare ABI 2 capabilities.
+
+## Uniform artwork in 0.2.1
+
+In **Add X/Y/Z jersey**, drop the world jersey and shorts artwork and optionally separate selection jersey artwork. Studio generates BC5 bumps and BC4 material maps (green maps) at the Xbox template sizes. Clear **Generate jersey and shorts bump and material maps** to keep the template maps. Dropping jersey or shorts artwork updates the 3D garment preview. Choose the neckline in the wizard or inherit Home. Logos and trim painted into the garment go in the garment artwork.
+
+Drop optional world number, selection number, surname, and world logo artwork. For the number and surname sheets, start from the stock template. Keep the dimensions, glyph cells, and transparent background from the corresponding stock sheet, with at most 256 exact RGBA colors. Export stock sheets from the **Uniforms** artwork selector as PNG templates. Selection banks have a separate, smaller number sheet. Player number assignments remain in the roster editor.
+
+To replace sheets on an existing uniform, copy the corresponding bank into your project, select its artwork in **Uniforms** or **Asset Lookup**, and export the mod folder. Alternate sheet imports and saved necklines require the updated native tools from 0.2.1.
+
+In the **Roster** tab, attach a native `Roster.ROS` and its aggregate header through **Mod Projects**. **Export roster as mod** creates a roster-only mod folder. **Export roster save** creates a fresh folder containing the edited `Roster.ROS` and its portable header. **Choose player shoes** edits brand, style, and Home/Away color for the selected player. The verified roster has no separate alternate shoe fields.
+
+With active mods, the launcher clears unlock codes and makes installed alternate pairs available on supported native roster saves. A new route inherits its Home uniform characteristics, with the alternate wizard's neckline applied if specified. Install a native roster save in the recomp first when using new alternate banks.

@@ -185,6 +185,10 @@ Studio exports mod folders with mod.json and mirrored named DDS assets. The runt
 
 Studio stages existing texture edits, one-image court component pairs and eligible X/Y/Z world/selection additions in private projects. Source browsing stays read-only. Full courts depend on the selected runtime's native court builder and stock layout coverage. Executable code authoring remains an external SDK workflow.
 
+## 0.2.1 uniform authoring
+
+Alternate projects derive template-sized BC5 normals and BC4 jersey and shorts material maps by default, show dropped artwork in 3D, offer a neckline override, and can replace world numbers, selection numbers, and surname artwork. Existing uniform sheets use named DDS replacement in mod-folder export. Alternate sheets require an updated native validator. Roster export supports mod folders and native save/header pairs. Player shoe selection uses the verified Home/Away fields.
+
 
 ---
 
@@ -321,6 +325,10 @@ Mod authoring supports folder export for named DDS files. Original encodings and
 | Roster editing | Attached native save body with its aggregate header |
 | 3D previews | Original or project SCNE browser |
 | Code mods | External compiled SDK extension attachment |
+
+## 0.2.1 uniform artwork
+
+Studio supports optional indexed number and surname replacements for new alternate banks and named-sheet replacements on existing banks. Glyph placement and spacing are inherited for exported artwork. The alternate builder supports five authored neck shapes. The native save exposes one player shoe brand and style and two color fields. Per-alternate footwear and in-game visual parity remain pending.
 
 
 ---
@@ -505,3 +513,16 @@ Georgia Southern's s272 floor and Albany's X artwork pair, then resolved the
 combined exported folder with the production launcher. The checks used private
 project copies and did not launch the game. They establish export and resolver
 compatibility, not in-game appearance or roster activation.
+
+## 0.2.1 uniform and roster checks
+
+The Windows Studio suite passed 164 tests. The native contract and uniform
+activation suites passed 29 tests, including Home neckline inheritance and
+explicit U and Wishbone overrides. Offline retail validation exported the
+Albany X world/selection pair with three BC5 bumps, two BC4 material maps,
+three edited indexed sheets, and a neckline override. The resolver also
+accepted an existing uniform number sheet replacement. An actual Recomp roster
+with the aligned aggregate header exported as both a native save and a
+roster-only mod. Activation on a separate copy cleared unlock codes and
+applied the requested neckline. Source files remained read-only. Gameplay
+rendering and in-game selection were outside the offline checks.

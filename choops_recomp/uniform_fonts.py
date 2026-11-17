@@ -41,19 +41,55 @@ def atlas(blocks):
     return Image.frombytes('RGBA',(width,height),b''.join(colors[i] for i in gpu[:width*height]))
 
 
-def save_atlas(target,path):
-    blocks=target.blocks();width,height,palette,levels=layout(blocks)
+def read_art(path, size):
     with Image.open(path) as opened:
-        if opened.size!=(width,height):raise ValueError('Indexed font artwork must retain its Xbox dimensions')
-        incoming=opened.convert('RGBA')
-    if incoming.tobytes()==atlas(blocks).tobytes():return False
+        if opened.size != size:
+            raise ValueError('Indexed font artwork must retain its Xbox dimensions')
+        incoming = opened.convert('RGBA')
+    if incoming.getcolors(256) is None:
+        raise ValueError('Xbox indexed font artwork supports at most 256 exact RGBA colors')
+    return incoming
+
+
+def edited_pixels(blocks, path):
+    width, height, palette, levels = layout(blocks)
+    incoming = read_art(path, (width, height))
+    if incoming.tobytes() == atlas(blocks).tobytes():
+        return blocks[1]
     colors=incoming.getcolors(256)
     if colors is None:raise ValueError('Xbox indexed font artwork supports at most 256 exact RGBA colors; reduce its palette before import')
     values=sorted(color for count,color in colors);lookup={color:i for i,color in enumerate(values)};indices=Image.frombytes('P',(width,height),bytes(lookup[p] for p in pixels(incoming)));gpu=bytearray(blocks[1])
     for offset,w,h in levels:gpu[offset:offset+w*h]=indices.resize((w,h),Image.Resampling.NEAREST).tobytes()
     # Retain source alignment padding; all mip indices use this one ARGB table.
     table=values+[(0,0,0,0)]*(256-len(values));gpu[palette:palette+1024]=bytes(c for r,g,b,a in table for c in (a,r,g,b))
-    atlas([blocks[0],bytes(gpu)]);atomic_write(target.component_path(1),bytes(gpu),sha(blocks[1]));return True
+    atlas([blocks[0], bytes(gpu)])
+    return bytes(gpu)
+
+
+def current_atlas(target):
+    from . import dds, edits
+    named = edits.named_texture_path(target)
+    return dds.image(named.read_bytes()) if named else atlas(target.blocks())
+
+
+def save_atlas(target, path):
+    from . import dds, edits
+    named = edits.named_texture_path(target)
+    if named:
+        original = named.read_bytes()
+        size = dds.image(original).size
+        artwork = read_art(path, size)
+        payload = original[:128] + artwork.tobytes()
+        if payload == original:
+            return False
+        edits.save_named_texture(named, payload)
+        return True
+    blocks = target.blocks()
+    gpu = edited_pixels(blocks, path)
+    if gpu == blocks[1]:
+        return False
+    atomic_write(target.component_path(1), gpu, sha(blocks[1]))
+    return True
 
 
 def metrics(blocks,width,count):
@@ -74,7 +110,7 @@ def save_metrics(target,atlas_resource,values):
 
 
 def glyphs(workspace,filename,role):
-    name='jersey_numbers' if role=='numbers' else 'names';image=atlas(resource(workspace,filename,name,0x5c369069).blocks());values=metrics(resource(workspace,filename,role,0x68b693b2).blocks(),image.width,10 if role=='numbers' else 28)
+    name='jersey_numbers' if role=='numbers' else 'names';image=current_atlas(resource(workspace,filename,name,0x5c369069));values=metrics(resource(workspace,filename,role,0x68b693b2).blocks(),image.width,10 if role=='numbers' else 28)
     return image,values
 
 

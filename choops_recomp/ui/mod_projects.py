@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QLineEdit,QPlainTextEdit,QFileDialog,QInputDialog,QComboBox,QDialog,QDialogButtonBox
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QLineEdit,QPlainTextEdit,QFileDialog,QInputDialog,QComboBox,QDialog,QDialogButtonBox,QCheckBox
 
 from ..mod_project import ModProject,read_json
 from .artwork_drop import ArtworkDrop
@@ -193,6 +193,20 @@ class ModProjects(QWidget):
         jersey = self.artwork_field(layout, 'World jersey artwork')
         shorts = self.artwork_field(layout, 'World shorts artwork')
         selection = self.artwork_field(layout, 'Selection jersey (optional)')
+        numbers = self.artwork_field(layout, 'World numbers (optional)')
+        selection_numbers = self.artwork_field(layout, 'Selection numbers (optional)')
+        lettering = self.artwork_field(layout, 'Surname sheet (optional)')
+        logo = self.artwork_field(layout, 'World logo (optional)')
+        neck = QComboBox()
+        neck.addItem('Use Home neckline', None)
+        for index, label in enumerate(('U', 'V', 'V triangle', 'Triangle', 'Wishbone')):
+            neck.addItem(label, index)
+        layout.addWidget(neck)
+        if not self.studio.offscreen:
+            self.add_alternate_preview(dialog, layout, project, model, team, neck, jersey, shorts)
+        bumps = QCheckBox('Generate jersey and shorts bump and material maps')
+        bumps.setChecked(True)
+        layout.addWidget(bumps)
         self.save_bar(dialog, layout)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -201,8 +215,79 @@ class ModProjects(QWidget):
             raise ValueError('Choose a team and both world artwork files')
         index, slot = team.itemData(team_index), variant.currentIndex() + 2
         inputs = jersey.text(), shorts.text(), selection.text() or None
-        self.studio.run_job(lambda _:project.create_alternate(index, slot, *inputs),
+        options = dict(numbers=numbers.text() or None, selection_numbers=selection_numbers.text() or None,
+                       lettering=lettering.text() or None, logo=logo.text() or None,
+                       generate_bumps=bumps.isChecked(), neck_shape=neck.currentData())
+        self.studio.run_job(lambda _:project.create_alternate(index, slot, *inputs, **options),
                             lambda names:self.feature_saved(project, 'Saved ' + ' and '.join(names) + ' to the project.'))
+
+    def add_alternate_preview(self, dialog, layout, project, model, team, neck, jersey, shorts):
+        from PySide6.QtCore import QTimer
+        from .. import uniform_preview, uniforms
+        from ..workspace import Workspace
+        from .scene_view import SceneView
+
+        view = SceneView()
+        view.setMinimumHeight(300)
+        layout.addWidget(view, 1)
+        generation = 0
+        pending = False
+        workspace = None
+        homes = {r['owner']: r for r in uniforms.rows(model) if r['variant'] == 0}
+        timer = QTimer(dialog)
+        timer.setSingleShot(True)
+        timer.setInterval(180)
+
+        def schedule(*_):
+            nonlocal generation
+            generation += 1
+            timer.start()
+
+        def render():
+            nonlocal pending
+            artwork = {'jersey': jersey.text(), 'shorts': shorts.text()}
+            index = team.currentData()
+            if pending or index is None or not any(artwork.values()) or not dialog.isVisible():
+                return
+            row = homes.get(uniforms.owner(model, index))
+            if row is None:
+                return
+            shape = neck.currentData()
+            current = generation
+            pending = True
+
+            def decode(_):
+                nonlocal workspace
+                try:
+                    if workspace is None:
+                        workspace = Workspace(project.source / 'assets')
+                    return uniform_preview.preview(workspace, row, shape, artwork=artwork), None
+                except (ValueError, OSError) as exc:
+                    return None, str(exc)
+
+            def finished(result):
+                nonlocal pending
+                pending = False
+                if not dialog.isVisible():
+                    return
+                if generation != current:
+                    timer.start()
+                    return
+                scene, error = result
+                if error:
+                    view.setToolTip(error)
+                else:
+                    view.setToolTip('')
+                    view.set_scene(scene['meshes'], scene['images'])
+
+            self.studio.run_job(decode, finished)
+
+        timer.timeout.connect(render)
+        for field in (jersey, shorts):
+            field.textChanged.connect(schedule)
+        team.currentIndexChanged.connect(schedule)
+        neck.currentIndexChanged.connect(schedule)
+        dialog.resize(820, 720)
 
     def feature_saved(self, project, message):
         if self.project is project:
@@ -212,7 +297,7 @@ class ModProjects(QWidget):
     def review(self):
         p=self.require();self.report.setPlainText(json.dumps(dict(changes=p.review(),roster=p.state['manifest'].get('roster'),uniforms=p.state['manifest'].get('uniforms'),extensions=p.state['manifest'].get('extensions')),indent=2))
 
-    def export(self):
+    def export(self, roster_only=False):
         p=self.require()
         if not self.studio.maybe_save():return
         self.save()
@@ -225,4 +310,4 @@ class ModProjects(QWidget):
             if not ok:return
             dependencies=[Path(s.strip()) for s in paths.splitlines() if s.strip()]
         self.report.setPlainText('Validating package with the runtime…')
-        self.studio.run_job(lambda progress:p.export_folder(output,dependencies),lambda manifest:self.report.setPlainText('Exported '+output+'\nRuntime metadata/source contracts accepted. DDS shared-owner checks still run during launcher preparation.\nNot in-game verified. Install and enable through the runtime launcher.'))
+        self.studio.run_job(lambda progress:p.export_folder(output,dependencies,roster_only=roster_only),lambda manifest:self.report.setPlainText('Exported '+output+'\nRuntime metadata/source contracts accepted. DDS shared-owner checks still run during launcher preparation.\nNot in-game verified. Install and enable through the runtime launcher.'))

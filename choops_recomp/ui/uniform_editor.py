@@ -49,9 +49,15 @@ class UniformEditor(QDialog):
         index=self.routes.currentData();self.art.clear()
         if index is None:return
         row=uniforms.rows(self.model)[index];self.asset.setValue(row['asset']);self.shape.setCurrentIndex(row['shape']);self.variant.setCurrentIndex(row['variant']);self.unlock.setValue(row['unlock']);filename=uniforms.name(row['asset'],row['variant']);bank=zlib.crc32(filename.upper().encode('ascii'))&0xffffffff
-        labels={zlib.crc32(n.encode())&0xffffffff:n for n in ('unifregion','unif','shortregion','short','names','jersey_numbers')}
+        labels={zlib.crc32(n.encode())&0xffffffff:n for n in ('unifregion','unif','shortregion','short','unifbump','shortbump','logo','names','jersey_numbers')}
+        selection = uniforms.name(row['asset'], row['variant'], True)
+        selection_bank = zlib.crc32(selection.upper().encode('ascii'))
         for resource in self.workspace.of_type('TXTR'):
-            if resource.entry['hash']==bank:self.art.addItem(labels.get(resource.record['id'],resource.label),resource)
+            label = labels.get(resource.record['id'], resource.label)
+            if resource.entry['hash'] == bank:
+                self.art.addItem(label, resource)
+            elif resource.entry['hash'] == selection_bank:
+                self.art.addItem('Selection / ' + label, resource)
         users=[r for r in uniforms.rows(self.model) if r['asset']==row['asset'] and r['variant']==row['variant']]
         self.details.setText(f'Artwork routing used by {len(users)} uniform row(s). Private routing does not copy shared artwork; use Clone selected artwork privately for independent textures.')
         if not self.parent().offscreen:self.preview()
@@ -106,7 +112,7 @@ class UniformEditor(QDialog):
             font=self.is_font(r);path,_=QFileDialog.getSaveFileName(self,'Export uniform artwork','','PNG (*.png)' if font else 'DDS (*.dds)')
             if not path:return
             if Path(path).exists():raise ValueError('Choose a new artwork destination')
-            if font:uniform_fonts.atlas(r.blocks()).save(path)
+            if font:uniform_fonts.current_atlas(r).save(path)
             else:
                 blocks=r.blocks();current=r.folder/'texture.dds';Path(path).write_bytes(current.read_bytes() if current.is_file() else dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None))
         self.perform(operation)
@@ -127,7 +133,7 @@ class UniformEditor(QDialog):
             selected(self.school)
             atlas=self.art.currentData()
             if atlas is None or not self.is_font(atlas):raise ValueError('Select names or jersey_numbers artwork first')
-            role='names' if atlas.record['id']==zlib.crc32(b'names')&0xffffffff else 'numbers';filename=uniforms.name(uniforms.rows(self.model)[self.routes.currentData()]['asset'],uniforms.rows(self.model)[self.routes.currentData()]['variant']);target=uniform_fonts.resource(self.workspace,filename,role,0x68b693b2);width=uniform_fonts.layout(atlas.blocks())[0];values=uniform_fonts.metrics(target.blocks(),width,28 if role=='names' else 10)
+            role='names' if atlas.record['id']==zlib.crc32(b'names')&0xffffffff else 'numbers';filename=atlas.bank;target=uniform_fonts.resource(self.workspace,filename,role,0x68b693b2);width=uniform_fonts.layout(atlas.blocks())[0];values=uniform_fonts.metrics(target.blocks(),width,28 if role=='names' else 10)
             dialog=QDialog(self);dialog.setWindowTitle('Xbox glyph metrics');layout=QVBoxLayout(dialog);table=QTableWidget(len(values),2);table.setHorizontalHeaderLabels(['Atlas X','Width']);table.setVerticalHeaderLabels(list("'-ABCDEFGHIJKLMNOPQRSTUVWXYZ") if role=='names' else list('0123456789'))
             for i,pair in enumerate(values):
                 for j,value in enumerate(pair):table.setItem(i,j,QTableWidgetItem(str(value)))

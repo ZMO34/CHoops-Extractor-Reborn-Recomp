@@ -193,9 +193,9 @@ class Studio(QMainWindow):
         self.current_audio=None
         self.audio_player=None;self.audio_preview_directory=None
         roster_page=QWidget();layout=QVBoxLayout(roster_page);row=QHBoxLayout();self.roster_tables=QComboBox();self.roster_tables.currentTextChanged.connect(self.change_table);row.addWidget(self.roster_tables)
-        for text,slot in [('Undo',self.undo),('Redo',self.redo),('School relationships…',self.edit_relationships),('Uniform editor…',self.edit_uniforms),('Channels…',self.edit_rating),('Team palette…',self.edit_palette),('New uniform…',self.add_uniform),('Save roster',self.save_roster)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
+        for text,slot in [('Undo',self.undo),('Redo',self.redo),('School relationships…',self.edit_relationships),('Uniform editor…',self.edit_uniforms),('Channels…',self.edit_rating),('Team palette…',self.edit_palette),('New uniform…',self.add_uniform),('Save project roster',self.save_roster),('Export roster as mod…',self.export_roster_mod),('Export roster save…',self.export_roster_save)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         layout.addLayout(row);row=QHBoxLayout()
-        for text,slot in [('Export CSV…',self.export_csv),('Import / compare…',self.import_csv),('Copy ratings',self.copy_ratings),('Paste ratings to selected',self.paste_ratings),('Preview player shoes…',self.preview_player_shoes)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
+        for text,slot in [('Export CSV…',self.export_csv),('Import / compare…',self.import_csv),('Copy ratings',self.copy_ratings),('Paste ratings to selected',self.paste_ratings),('Choose player shoes…',self.choose_player_shoes),('Preview player shoes…',self.preview_player_shoes)]:b=QPushButton(text);b.clicked.connect(slot);row.addWidget(b)
         layout.addLayout(row);row=QHBoxLayout();self.roster_search=QLineEdit();self.roster_search.setPlaceholderText('Search roster fields…');row.addWidget(self.roster_search,1);self.roster_school=QComboBox();self.roster_school.addItem('All schools',None);row.addWidget(self.roster_school);self.roster_count=QLabel();row.addWidget(self.roster_count);layout.addLayout(row);self.roster_search.textChanged.connect(self.filter_roster);self.roster_school.currentIndexChanged.connect(self.filter_roster)
         self.roster_view=QTableView();split=QSplitter();split.addWidget(self.roster_view);self.player_tabs=QTabWidget();self.player_properties=QTableView();self.player_ratings=QTableView();self.player_eligibility=QTableView();self.player_footwear=QTableView();self.player_tabs.addTab(self.player_eligibility,'Eligibility');self.player_tabs.addTab(self.player_properties,'Appearance / Motion');self.player_tabs.addTab(self.player_footwear,'Footwear');self.player_tabs.addTab(self.player_ratings,'Ratings');split.addWidget(self.player_tabs);layout.addWidget(split);self.player_summary=QLabel();self.player_summary.setTextFormat(Qt.TextFormat.PlainText);layout.addWidget(self.player_summary);layout.addWidget(QLabel('Xbox profile: 316-byte player rows. Unknown source bits are preserved.'));self.tabs.addTab(roster_page,'Roster')
         self.statusBar().showMessage('Open the recomp game’s assets folder. No game is launched by this editor.')
@@ -440,9 +440,9 @@ class Studio(QMainWindow):
                 import zlib
                 from ..edits import named_texture_path
                 named=named_texture_path(r)
-                if named is None and len(blocks[0])>=12 and blocks[0][8:12]==bytes.fromhex('24820002'):
-                    from ..uniform_fonts import atlas
-                    image=atlas(blocks);self.current_font=r;self.current_texture=None;self.texture_face.setEnabled(False);self.show_pil_image(image);self.texture_details.setText(r.label+f' • Xbox indexed font {image.width}×{image.height} • export/import PNG');return
+                if len(blocks[0])>=12 and blocks[0][8:12]==bytes.fromhex('24820002'):
+                    from ..uniform_fonts import current_atlas
+                    image=current_atlas(r);self.current_font=r;self.current_texture=None;self.texture_face.setEnabled(False);self.show_pil_image(image);self.texture_details.setText(r.label+f' • Xbox indexed font {image.width}×{image.height} • export/import PNG');return
                 path=named or r.folder/'texture.dds'
                 payload=named.read_bytes() if named else dds.xbox_dds(blocks[0],blocks[1] if len(blocks)>1 else None)
                 descriptor=dds.info(payload)
@@ -499,6 +499,54 @@ class Studio(QMainWindow):
         def decode(progress):
             result=preview(workspace,filename);result['generation']=generation;return result
         self.run_job(decode,self.show_scene)
+    def choose_player_shoes(self):
+        if not self.require_project_edit(roster=True):
+            return
+        if self.roster is None or self.roster_tables.currentText() != 'players' or self.roster_row() < 0:
+            return
+        from .. import footwear
+
+        index = self.roster_row()
+        player = self.roster.row('players', index)
+        dialog = QDialog(self)
+        dialog.setWindowTitle('Choose player shoes')
+        layout = QVBoxLayout(dialog)
+        labels = ('Brand', 'Style', 'Home color', 'Away color')
+        controls = {}
+        for key, label in zip(footwear.KEYS, labels):
+            layout.addWidget(QLabel(label))
+            controls[key] = QComboBox()
+            layout.addWidget(controls[key])
+
+        def fill(key, options, chosen):
+            combo = controls[key]
+            combo.clear()
+            for code, label in options.items():
+                combo.addItem(label, int(code))
+            combo.setCurrentIndex(max(0, combo.findData(chosen)))
+
+        brand = footwear.KEYS[0]
+        fill(brand, footwear.choices(brand, player), player[brand])
+
+        def fill_dependent(*_):
+            chosen_brand = {brand: controls[brand].currentData()}
+            for key in footwear.KEYS[1:]:
+                previous = controls[key].currentData()
+                fill(key, footwear.choices(key, chosen_brand), player[key] if previous is None else previous)
+
+        fill_dependent()
+        controls[brand].currentIndexChanged.connect(fill_dependent)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Save | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                footwear.save_assignment(self.roster, index, {key: combo.currentData() for key, combo in controls.items()})
+                self.roster_changed()
+            except ValueError as exc:
+                self.error(str(exc))
+
     def preview_player_shoes(self):
         if self.roster is None or self.roster_tables.currentText()!='players' or self.roster_row()<0:return
         variant,ok=QInputDialog.getItem(self,'Player shoe artwork','Uniform',['Home','Away'],0,False)
@@ -562,9 +610,9 @@ class Studio(QMainWindow):
         except ValueError as exc:self.error(str(exc))
     def export_texture(self):
         if self.current_font is not None:
-            from ..uniform_fonts import atlas
+            from ..uniform_fonts import current_atlas
             resource=self.current_font;path,_=QFileDialog.getSaveFileName(self,'Export Xbox indexed font','','PNG (*.png)')
-            if path:atlas(resource.blocks()).save(path)
+            if path:current_atlas(resource).save(path)
             return
         if not self.current_texture:return
         resource,payload,target=self.current_texture;descriptor=dds.info(payload);path,_=QFileDialog.getSaveFileName(self,'Export texture artwork','','DDS (*.dds);;PNG face (*.png)')
@@ -578,7 +626,20 @@ class Studio(QMainWindow):
         if not isinstance(path,str):path=None
         if confirm and QMessageBox.question(self,'Replace project artwork','Save the dropped artwork to this mod project?')!=QMessageBox.StandardButton.Yes:return
         if self.current_font is not None:
-            self.error('Indexed font imports do not have a mod-folder export contract')
+            from .. import uniform_fonts
+            from ..edits import named_texture_path
+            resource = self.current_font
+            if named_texture_path(resource) is None:
+                self.error('This font has no named texture in the installed catalog')
+                return
+            if path is None:
+                path, _ = QFileDialog.getOpenFileName(self, 'Replace Xbox glyph sheet', filter='Artwork (*.png *.dds)')
+            if path:
+                try:
+                    uniform_fonts.save_atlas(resource, path)
+                    self.select_resource('TXTR', self.pages['TXTR']['view'].currentIndex())
+                except (ValueError, OSError) as exc:
+                    self.error(str(exc))
             return
         if not self.current_texture:return
         r,old,target=self.current_texture
@@ -750,6 +811,32 @@ class Studio(QMainWindow):
         if not self.roster:return
         try:self.roster.save(self.roster_resource.component_path());self.statusBar().showMessage('Xbox roster saved in project. Export the mod folder to use it.')
         except ValueError as exc:self.error(str(exc))
+    def export_roster_mod(self):
+        if self.require_project_edit(roster=True):
+            self.mod_projects.invoke(lambda: self.mod_projects.export(roster_only=True))
+
+    def export_roster_save(self):
+        if not self.require_project_edit(roster=True) or not self.roster:
+            return
+        parent = QFileDialog.getExistingDirectory(self, 'Choose a parent folder for the roster save')
+        if not parent:
+            return
+        name, accepted = QInputDialog.getText(self, 'Roster save export', 'New folder name', text='Roster Export')
+        if not accepted or not name:
+            return
+        if Path(name).name != name or name in ('.', '..'):
+            self.error('Enter a single folder name')
+            return
+        try:
+            self.save_roster()
+            if bytes(self.roster.data) != self.roster.original:
+                return
+            project = self.mod_projects.project
+            self.run_job(lambda _: project.export_roster_save(Path(parent) / name),
+                         lambda out: self.statusBar().showMessage(f'Exported Roster.ROS and header to {out}'))
+        except (ValueError, OSError) as exc:
+            self.error(str(exc))
+
     def edit_rating(self):
         if not self.require_project_edit(roster=True):return
         if not self.roster or self.roster_tables.currentText()!='players':return

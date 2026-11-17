@@ -178,3 +178,16 @@ Georgia Southern's s272 floor and Albany's X artwork pair, then resolved the
 combined exported folder with the production launcher. The checks used private
 project copies and did not launch the game. They establish export and resolver
 compatibility, not in-game appearance or roster activation.
+
+## 0.2.1 uniform and roster checks
+
+The Windows Studio suite passed 164 tests. The native contract and uniform
+activation suites passed 29 tests, including Home neckline inheritance and
+explicit U and Wishbone overrides. Offline retail validation exported the
+Albany X world/selection pair with three BC5 bumps, two BC4 material maps,
+three edited indexed sheets, and a neckline override. The resolver also
+accepted an existing uniform number sheet replacement. An actual Recomp roster
+with the aligned aggregate header exported as both a native save and a
+roster-only mod. Activation on a separate copy cleared unlock codes and
+applied the requested neckline. Source files remained read-only. Gameplay
+rendering and in-game selection were outside the offline checks.

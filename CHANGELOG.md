@@ -1,5 +1,14 @@
 # Changes
 
+## 0.2.1
+
+- Generate BC5 bump and BC4 material maps for alternate jerseys and shorts from dropped artwork.
+- Preview dropped garments in 3D and save an alternate neckline.
+- Export roster-only mods or native roster saves and edit player shoes.
+- Enable available uniform routes when mods are active on supported native roster saves.
+- Import separate world and selection number sheets and world surname lettering.
+- Export edited sheets from existing uniforms as named mod-folder texture replacements.
+
 ## 0.2.0
 
 - Added artwork drops for project textures, the one-image court builder, and a team-based X/Y/Z alternate uniform wizard.

@@ -1,5 +1,17 @@
 # User guide
 
+## Convert a PS3 roster
+
+Open a mod project based on a clean USA Xbox installation. In **Mods / Mod
+Projects**, choose **Import PS3 roster…** and select the decrypted PS3
+`USERDATA`, the unmodified USA PS3 `roster_english.iff` or its decoded
+ROST component, and an existing Xbox `Roster.ROS.header`.
+
+Studio checks both stock references, converts the save, and opens the
+attached Xbox roster in the project. Use **Export roster as mod…** for the
+Recomp launcher or **Export roster save…** for the Dummy HDD save and header.
+The import checks roster data offline.
+
 ## Security update
 
 Install updated dependencies before launching Studio. When opening a CHMOD project, select a trusted local runtime installation in the runtime picker.

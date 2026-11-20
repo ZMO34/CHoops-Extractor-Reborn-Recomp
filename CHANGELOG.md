@@ -1,5 +1,10 @@
 # Changes
 
+## Unreleased
+
+- Import decrypted USA PS3 rosters into Xbox mod projects through the GUI
+  or CLI, with source-byte round-trip and native attachment validation.
+
 ## 0.2.4
 
 - Import verified PS3 bottom-bar scorebug artwork into Xbox texture slots.

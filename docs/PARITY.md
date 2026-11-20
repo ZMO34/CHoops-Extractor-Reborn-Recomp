@@ -1,5 +1,12 @@
 # Feature parity tracker
 
+## PS3 roster interoperability
+
+| Capability | Evidence | Scope |
+| --- | --- | --- |
+| Import decrypted PS3 roster into a mod project | Stock reconstruction and full edited-source round trip | USA retail references and supported save layout |
+| Export the converted roster | Existing native roster save and mod export | Xbox Recomp, offline validation |
+
 ## Security update
 
 The security update retains existing Xbox component and mod format coverage.

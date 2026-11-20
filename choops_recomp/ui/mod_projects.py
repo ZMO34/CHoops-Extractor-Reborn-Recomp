@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 
 from PySide6.QtCore import QSettings
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QLineEdit,QPlainTextEdit,QFileDialog,QInputDialog,QComboBox,QDialog,QDialogButtonBox,QCheckBox
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QPushButton,QLabel,QLineEdit,QPlainTextEdit,QFileDialog,QInputDialog,QComboBox,QDialog,QDialogButtonBox,QCheckBox,QMessageBox
 
 from ..mod_project import ModProject,read_json
 from .artwork_drop import ArtworkDrop
@@ -32,7 +32,7 @@ class ModProjects(QWidget):
         for title,fn in [('Build one-image court…',self.court),('Build or replace uniform…',self.alternate),('Review differences',self.review),('Export Mod Folder…',self.export)]:
             b=QPushButton(title);b.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(b)
         row=QHBoxLayout();layout.addLayout(row)
-        for title,fn in [('Attach native roster + header…',self.roster),('Attach prepared uniform bank…',self.uniform),('Attach external DLL…',self.extension)]:
+        for title,fn in [('Attach native roster + header…',self.roster),('Import PS3 roster…',self.import_ps3_roster),('Attach prepared uniform bank…',self.uniform),('Attach external DLL…',self.extension)]:
             b=QPushButton(title);b.clicked.connect(lambda checked=False,f=fn:self.invoke(f));row.addWidget(b)
         self.report=QPlainTextEdit();self.report.setReadOnly(True);layout.addWidget(self.report,1)
 
@@ -231,6 +231,30 @@ class ModProjects(QWidget):
         if not payload:return
         header,_=QFileDialog.getOpenFileName(self,'That roster’s original aggregate header',filter='Header (*.header)')
         if header:p.attach_roster(payload,header);self.refresh()
+
+    def import_ps3_roster(self):
+        project = self.require()
+        userdata, _ = QFileDialog.getOpenFileName(self, 'Decrypted PS3 USERDATA')
+        if not userdata:
+            return
+        stock, _ = QFileDialog.getOpenFileName(
+            self, 'Unmodified USA PS3 roster_english.iff or decoded ROST',
+            filter='Roster reference (*.iff *.rost *.dat);;All files (*)')
+        if not stock:
+            return
+        header, _ = QFileDialog.getOpenFileName(
+            self, 'Existing Xbox Roster.ROS.header', filter='Header (*.header)')
+        if not header or not self.studio.maybe_save():
+            return
+        if project.state['manifest'].get('roster'):
+            choice = QMessageBox.question(
+                self, 'Replace project roster', 'Replace the attached roster in this mod project?')
+            if choice != QMessageBox.StandardButton.Yes:
+                return
+        project.import_ps3_roster(userdata, stock, header)
+        self.refresh()
+        self.activate()
+        self.report.setPlainText('PS3 roster converted, round-tripped and attached to this project.')
 
     def compare(self):
         p=self.require();selected=self.studio.current_texture

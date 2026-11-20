@@ -1,5 +1,14 @@
 # Xbox format evidence
 
+## PS3 roster import profile
+
+The verified USA profile expands 5,685 player records and 10 templates from
+308 to 316 bytes, moves text references, rebases all 18 team player links,
+and rotates the team and conference color words into Xbox ARGB. The player
+converter maps packed fields, including the custom FaceGen flag and all
+130 coefficients, using stock comparisons and executable traces. See the
+[Xbox layout findings](https://github.com/kima1810/CH2K8-recomp/pull/13).
+
 ## Security update
 
 Component decoding bounds zlib output by the declared uncompressed extent and copies only the bytes used by each H7A match. CHMOD inspection accepts stored and deflated ZIP entries and checks the archive size before reading its directory.

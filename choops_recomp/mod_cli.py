@@ -10,9 +10,9 @@ def main(argv=None):
     sub=p.add_subparsers(dest='command',required=True)
     s=sub.add_parser('create');s.add_argument('project',type=Path);s.add_argument('--assets',type=Path,required=True);s.add_argument('--runtime',type=Path,required=True)
     for field in ('id','name','author'):s.add_argument('--'+field,required=True)
-    for name in ('add-bank','review','export','full-court','alternate','uniform','attach-roster','attach-extension','attach-uniform','roster-save','metadata'):
+    for name in ('add-bank','review','export','full-court','alternate','uniform','attach-roster','import-ps3-roster','attach-extension','attach-uniform','roster-save','metadata'):
         s=sub.add_parser(name);s.add_argument('project',type=Path)
-        if name in ('export','full-court','alternate','uniform','attach-roster','attach-extension','attach-uniform','roster-save'):
+        if name in ('export','full-court','alternate','uniform','attach-roster','import-ps3-roster','attach-extension','attach-uniform','roster-save'):
             s.add_argument('--runtime', type=Path, required=True, help='Trusted local runtime installation')
         if name=='roster-save':s.add_argument('output',type=Path)
         if name=='add-bank':s.add_argument('bank')
@@ -31,6 +31,10 @@ def main(argv=None):
                            help='Retain template bump and material maps')
             s.add_argument('--neck-shape', type=int, choices=range(5))
         if name=='attach-roster':s.add_argument('payload',type=Path);s.add_argument('header',type=Path)
+        if name=='import-ps3-roster':
+            s.add_argument('userdata', type=Path)
+            s.add_argument('ps3_stock', type=Path)
+            s.add_argument('xbox_header', type=Path)
         if name=='attach-extension':
             s.add_argument('dll',type=Path);s.add_argument('--abi',type=int,choices=(1,2),default=1)
             s.add_argument('--capability',action='append',default=[]);s.add_argument('--replacement',action='append',default=[])
@@ -53,6 +57,7 @@ def main(argv=None):
                                 generate_bumps=not a.keep_template_bumps, neck_shape=a.neck_shape)))
     elif a.command=='roster-save':print(project.export_roster_save(a.output))
     elif a.command=='attach-roster':project.attach_roster(a.payload,a.header)
+    elif a.command=='import-ps3-roster':project.import_ps3_roster(a.userdata, a.ps3_stock, a.xbox_header)
     elif a.command=='attach-extension':project.attach_extension(a.dll,abi=a.abi,capabilities=a.capability,replacements=a.replacement)
     elif a.command=='attach-uniform':project.attach_uniform(a.folder,a.template_hash)
     elif a.command=='metadata':

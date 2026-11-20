@@ -7,6 +7,13 @@ Read AGENTS.md before editing. Work in this repository; do not launch the game.
 
 # Current status
 
+## PS3 roster import
+
+Mod Projects can convert a decrypted USA PS3 roster to a native Xbox
+attachment. The importer checks the two stock references, verifies the
+source-byte round trip, and uses the existing transactional native roster
+attachment path. GUI and CLI share the backend.
+
 ## Security update
 
 CI audits the resolved Python dependencies against published advisories. Native mod validation uses an explicitly selected local runtime. Stored project runtime paths are ignored.
@@ -206,6 +213,13 @@ Studio can choose a child mod beneath a collection folder. The launcher installs
 
 # Feature parity tracker
 
+## PS3 roster interoperability
+
+| Capability | Evidence | Scope |
+| --- | --- | --- |
+| Import decrypted PS3 roster into a mod project | Stock reconstruction and full edited-source round trip | USA retail references and supported save layout |
+| Export the converted roster | Existing native roster save and mod export | Xbox Recomp, offline validation |
+
 ## Security update
 
 The security update retains existing Xbox component and mod format coverage.
@@ -358,6 +372,21 @@ Nested package browsing uses the Xbox package contract. The scorebug importer co
 ---
 
 # Test report
+
+## PS3 roster import
+
+- Studio regression suite passed 166 tests using a short Windows temporary
+  path. The first run's sole failure was the existing named-texture test
+  exceeding a Windows PowerShell path limit.
+- A US retail smoke test imported a PS3 IFF and decrypted USERDATA through
+  the CLI and the offscreen Studio button. The Xbox payload reproduced the
+  verified standalone conversion byte for byte.
+- Native validation accepted the attached roster, and both the save export
+  and roster-only mod-folder export passed. The game was not used for these
+  Studio checks.
+- The Windows build using Qt 6.11.3 passed an offscreen startup check and
+  packaged CLI import and save export. Its output matched the standalone
+  conversion byte for byte.
 
 ## Security update
 

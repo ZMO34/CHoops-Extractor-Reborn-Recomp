@@ -1,5 +1,20 @@
 # Test report
 
+## PS3 roster import
+
+- Studio regression suite passed 166 tests using a short Windows temporary
+  path. The first run's sole failure was the existing named-texture test
+  exceeding a Windows PowerShell path limit.
+- A US retail smoke test imported a PS3 IFF and decrypted USERDATA through
+  the CLI and the offscreen Studio button. The Xbox payload reproduced the
+  verified standalone conversion byte for byte.
+- Native validation accepted the attached roster, and both the save export
+  and roster-only mod-folder export passed. The game was not used for these
+  Studio checks.
+- The Windows build using Qt 6.11.3 passed an offscreen startup check and
+  packaged CLI import and save export. Its output matched the standalone
+  conversion byte for byte.
+
 ## Security update
 
 Security update on Windows with Python 3.14, PySide6 6.11.3 and Pillow 13.0.0 recorded **145 passed, 18 skipped**. pip-audit reported no known vulnerabilities for the tested Python dependency set. Native runtime integration was excluded because the available checkout has different contract snapshots.

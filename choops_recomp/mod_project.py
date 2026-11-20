@@ -401,6 +401,28 @@ class ModProject:
         state=copy.deepcopy(self.state);state['manifest']['roster']=dict(file='rosters/Roster.ROS',sha256=sha(data),header='rosters/Roster.ROS.header',header_sha256=sha(head));state['native_body_sha256']=sha(body)
         self._commit_attachment(changes,state)
 
+    def import_ps3_roster(self, userdata, ps3_reference, xbox_header):
+        """Convert and attach a PS3 roster using this project's stock Xbox bank."""
+        from .ps3_roster import convert_save
+
+        userdata = Path(userdata)
+        ps3_reference = Path(ps3_reference)
+        if userdata.stat().st_size > 64 * 1024 * 1024 or ps3_reference.stat().st_size > 3981216:
+            raise ValueError('PS3 roster inputs exceed supported bounds')
+        roster_bank_hash = 3169844550  # Retail roster_english.iff
+        workspace = Workspace(self.source / 'assets')
+        resources = [r for r in workspace.of_type('ROST') if r.entry['hash'] == roster_bank_hash]
+        if len(resources) != 1:
+            raise ValueError('The project source must have one stock Xbox roster_english.iff')
+        blocks = resources[0].blocks()
+        if len(blocks) != 1:
+            raise ValueError('The Xbox roster bank has an unsupported component layout')
+        converted = convert_save(userdata.read_bytes(), ps3_reference.read_bytes(), blocks[0])
+        with tempfile.TemporaryDirectory(prefix='.ps3-roster-', dir=self.root) as directory:
+            payload = Path(directory) / 'Roster.ROS'
+            payload.write_bytes(converted)
+            self.attach_roster(payload, xbox_header)
+
     def export_roster_save(self, output):
         """Publish the validated ROS/header pair into one fresh directory."""
         output = Path(output).resolve()

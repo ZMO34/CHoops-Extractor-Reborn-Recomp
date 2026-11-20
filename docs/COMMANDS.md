@@ -1,5 +1,15 @@
 # Commands
 
+## Import a PS3 roster into an Xbox mod project
+
+```powershell
+choops-recomp mod import-ps3-roster PROJECT --runtime RECOMP USERDATA roster_english.iff Roster.ROS.header
+choops-recomp mod export PROJECT --runtime RECOMP --roster-only MOD-FOLDER
+```
+
+The import accepts the USA retail PS3 IFF or its decoded ROST body and
+uses the project's stock USA Xbox roster as the comparison reference.
+
 ## Security update
 
 After installing the Studio development dependencies and pip-audit, run the dependency audit commands from the test workflow. The CHMOD `export`, `attach-roster`, `attach-extension` and `attach-uniform` commands require `--runtime` pointing to a trusted local installation.

@@ -1,5 +1,12 @@
 # Current status
 
+## PS3 roster import
+
+Mod Projects can convert a decrypted USA PS3 roster to a native Xbox
+attachment. The importer checks the two stock references, verifies the
+source-byte round trip, and uses the existing transactional native roster
+attachment path. GUI and CLI share the backend.
+
 ## Security update
 
 CI audits the resolved Python dependencies against published advisories. Native mod validation uses an explicitly selected local runtime. Stored project runtime paths are ignored.
